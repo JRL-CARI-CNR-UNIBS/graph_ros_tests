@@ -7,6 +7,7 @@ set(CMAKE_BUILD_TYPE Debug)
 
 find_package(catkin REQUIRED COMPONENTS
   graph_ros1
+  graph_display
   )
 
 find_package(cnr_logger REQUIRED)
@@ -26,7 +27,7 @@ pkg_check_modules(YAML_CPP REQUIRED yaml-cpp)
 catkin_package(
   # INCLUDE_DIRS include
   # LIBRARIES graph_ros1_tests
-    CATKIN_DEPENDS graph_ros1
+    CATKIN_DEPENDS graph_ros1 graph_display
   # DEPENDS
   )
 

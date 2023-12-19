@@ -4,6 +4,10 @@
 #include <moveit/move_group_interface/move_group_interface.h>
 
 #include <graph_ros1/parallel_moveit_collision_checker.h>
+#include <graph_core/informed_sampler.h>
+#include <graph_core/solvers/rrt.h>
+#include <graph_core/metrics.h>
+#include <graph_display/graph_display.h>
 
 int main(int argc, char **argv)
 {
@@ -32,99 +36,118 @@ int main(int argc, char **argv)
   std::string yaml_file = package_path+yaml_file_path;
   ROS_INFO_STREAM("Yaml file: "<<yaml_file);
 
-  std::string txt = "txt";
-  cnr_logger::TraceLoggerPtr l = std::make_shared<cnr_logger::TraceLogger>(txt,txt);
+  YAML::Node config;
 
-//  YAML::Node config;
-//  config = YAML::LoadFile(yaml_file);
-
-//  Eigen::VectorXd q;
-//  q.setRandom(3,1);
-//  graph_core::Node n(q);
-
-//  ROS_INFO_STREAM("q"<<n.getReservedFlagsNumber());
-
-
-
-//  try {
-//    config = YAML::LoadFile(yaml_file_path);
-//  } catch (const YAML::Exception& e) {
-//    ROS_ERROR_STREAM("Error loading YAML file");
-//    return 1;
-//  }
+  try {
+    config = YAML::LoadFile(yaml_file);
+  } catch (const YAML::Exception& e) {
+    ROS_ERROR_STREAM("Error loading YAML file: "<<e.what());
+    return 1;
+  }
 
   // Get the robot description
-//  std::string group_name;
-//  if (config["group_name"])
-//    group_name = config["group_name"].as<std::string>();
-//  else
-//  {
-//    ROS_ERROR_STREAM("Parameter 'group_name' not found.");
-//    return 1;
-//  }
+  std::string group_name;
+  if (config["group_name"])
+    group_name = config["group_name"].as<std::string>();
+  else
+  {
+    ROS_ERROR_STREAM("Parameter 'group_name' not found.");
+    return 1;
+  }
 
-//  moveit::planning_interface::MoveGroupInterface move_group(group_name);
-//  robot_model_loader::RobotModelLoader robot_model_loader("robot_description");
-//  robot_model::RobotModelPtr kinematic_model = robot_model_loader.getModel();
-//  planning_scene::PlanningScenePtr planning_scene = std::make_shared<planning_scene::PlanningScene>(kinematic_model);
+  robot_model_loader::RobotModelLoader robot_model_loader("robot_description");
+  robot_model::RobotModelPtr kinematic_model = robot_model_loader.getModel();
+  planning_scene::PlanningScenePtr planning_scene = std::make_shared<planning_scene::PlanningScene>(kinematic_model);
+  const robot_state::JointModelGroup* joint_model_group =  kinematic_model->getJointModelGroup(group_name);
+  std::vector<std::string> joint_names = joint_model_group->getActiveJointModelNames();
 
-//  const robot_state::JointModelGroup* joint_model_group = move_group.getCurrentState()->getJointModelGroup(group_name);
-//  std::vector<std::string> joint_names = joint_model_group->getActiveJointModelNames();
+  unsigned int dof = joint_names.size();
+  Eigen::VectorXd lb(dof);
+  Eigen::VectorXd ub(dof);
 
-//  unsigned int dof = joint_names.size();
-//  Eigen::VectorXd lb(dof);
-//  Eigen::VectorXd ub(dof);
+  for (unsigned int idx = 0; idx < dof; idx++)
+  {
+    const robot_model::VariableBounds& bounds = kinematic_model->getVariableBounds(joint_names.at(idx));
+    if (bounds.position_bounded_)
+    {
+      lb(idx) = bounds.min_position_;
+      ub(idx) = bounds.max_position_;
+    }
+  }
 
-//  for (unsigned int idx = 0; idx < dof; idx++)
-//  {
-//    const robot_model::VariableBounds& bounds = kinematic_model->getVariableBounds(joint_names.at(idx));
-//    if (bounds.position_bounded_)
-//    {
-//      lb(idx) = bounds.min_position_;
-//      ub(idx) = bounds.max_position_;
-//    }
-//  }
+  // Update the planning scene
+  graph_core::DisplayPtr display = std::make_shared<graph_core::Display>(planning_scene,group_name,kinematic_model->getLinkModelNames().back());
+  kinematic_model->getLinkModelNames();
+  ros::WallDuration(1).sleep();
 
-//  // Update the planning scene
-//  ros::ServiceClient ps_client=nh.serviceClient<moveit_msgs::GetPlanningScene>("/get_planning_scene");
-//  moveit_msgs::GetPlanningScene ps_srv;
-//  if (!ps_client.waitForExistence(ros::Duration(10)))
-//  {
-//    ROS_ERROR("Unable to connect to /get_planning_scene");
-//    return 1;
-//  }
+  ros::ServiceClient ps_client=nh.serviceClient<moveit_msgs::GetPlanningScene>("/get_planning_scene");
+  moveit_msgs::GetPlanningScene ps_srv;
+  if (!ps_client.waitForExistence(ros::Duration(10)))
+  {
+    ROS_ERROR("Unable to connect to /get_planning_scene");
+    return 1;
+  }
 
-//  if (!ps_client.call(ps_srv))
-//  {
-//    ROS_ERROR("Call to srv not ok");
-//    return 1;
-//  }
+  if (!ps_client.call(ps_srv))
+  {
+    ROS_ERROR("Call to srv not ok");
+    return 1;
+  }
 
-//  if (!planning_scene->setPlanningSceneMsg(ps_srv.response.scene))
-//  {
-//    ROS_ERROR("unable to update planning scene");
-//    return 1;
-//  }
+  if (!planning_scene->setPlanningSceneMsg(ps_srv.response.scene))
+  {
+    ROS_ERROR("unable to update planning scene");
+    return 1;
+  }
 
   // Read start and goal configurations
+  std::vector<double> start_vector, goal_vector;
+  if (not config["start_configuration"] || not config["goal_configuration"])
+  {
+    ROS_ERROR_STREAM("Parameter 'start_configuration' and/or 'goal_configuration' not found.");
+    return 1;
+  }
+  else
+  {
+    start_vector = config["start_configuration"].as<std::vector<double>>();
+    goal_vector  = config["goal_configuration" ].as<std::vector<double>>();
+  }
 
-//  std::vector<double> start_vector, goal_vector;
-//  if (not config["start_configuration"] || not config["goal_configuration"])
-//  {
-//    ROS_ERROR_STREAM("Parameter 'start_configuration' and/or 'goal_configuration' not found.");
-//    return 1;
-//  }
-//  else
-//  {
-//    start_vector = config["start_configuration"].as<std::vector<double>>();
-//    goal_vector  = config["goal_configuration" ].as<std::vector<double>>();
-//  }
+  Eigen::VectorXd start_conf = Eigen::Map<Eigen::VectorXd>(start_vector.data(), start_vector.size());
+  Eigen::VectorXd goal_conf  = Eigen::Map<Eigen::VectorXd>(goal_vector .data(), goal_vector .size());
 
-//  Eigen::VectorXd start_conf = Eigen::Map<Eigen::VectorXd>(start_vector.data(), start_vector.size());
-//  Eigen::VectorXd goal_conf  = Eigen::Map<Eigen::VectorXd>(goal_vector .data(), goal_vector .size());
+  ROS_INFO_STREAM("Start conf: "<<start_conf.transpose());
+  ROS_INFO_STREAM("Goal conf: " <<goal_conf .transpose());
 
-//  ROS_INFO_STREAM("Start conf: "<<start_conf.transpose());
-//  ROS_INFO_STREAM("Goal conf: " <<goal_conf .transpose());
+  // Set-up planning tools
+  int n_threads = 4;
+  nh.getParam("parallel_checker_n_threads",n_threads);
+
+  double checker_resolution = 0.01;
+  nh.getParam("checker_resolution",checker_resolution);
+
+  std::string logger_file = package_path+"/config/logger_param.yaml";
+  cnr_logger::TraceLoggerPtr logger = std::make_shared<cnr_logger::TraceLogger>("test_graph_core",logger_file);
+  graph_core::CollisionCheckerPtr checker = std::make_shared<graph_core::ParallelMoveitCollisionChecker>(planning_scene, group_name, logger, n_threads, checker_resolution);
+  graph_core::SamplerPtr sampler = std::make_shared<graph_core::InformedSampler>(start_conf,goal_conf,lb,ub,logger);
+  graph_core::MetricsPtr metrics = std::make_shared<graph_core::Metrics>(logger);
+  graph_core::RRTPtr solver = std::make_shared<graph_core::RRT>(metrics,checker,sampler,logger);
+
+  graph_core::PathPtr solution;
+  ros::WallTime tic = ros::WallTime::now();
+  if(solver->computePath(start_conf,goal_conf,config,solution,10.0,1000000))
+  {
+    ROS_INFO_STREAM("Solution found!\n"<<*solution);
+    display->displayPath(solution);
+
+//    while(ros::ok())
+//    {
+//      ros::WallDuration(1).sleep();
+//      display->displayPath(solution);
+//    }
+  }
+  else
+    ROS_ERROR_STREAM("Solution not found in "<<(ros::WallTime::now()-tic).toSec()<<" seconds");
 
   return 0;
 }
