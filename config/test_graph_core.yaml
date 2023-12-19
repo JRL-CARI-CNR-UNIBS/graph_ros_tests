@@ -1,0 +1,8 @@
+group_name: "cartesian_arm"
+start_configuration: [0.2,0.2,0.2]
+goal_configuration:  [2.8,2.8,2.8]
+utopia_tolerance: 0.05
+extend: false
+max_distance: 0.5
+checker_resolution: 0.01
+parallel_checker_n_threads: 4
