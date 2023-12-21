@@ -6,6 +6,9 @@
 #include <graph_ros1/parallel_moveit_collision_checker.h>
 #include <graph_core/informed_sampler.h>
 #include <graph_core/solvers/rrt.h>
+#include <graph_core/solvers/birrt.h>
+#include <graph_core/solvers/anytime_rrt.h>
+#include <graph_core/solvers/rrt_star.h>
 #include <graph_core/metrics.h>
 #include <graph_display/graph_display.h>
 
@@ -26,8 +29,9 @@ int main(int argc, char **argv)
   }
 
   ros::NodeHandle nh;
+  ros::NodeHandle pnh("~");
   std::string yaml_file_path;
-  if(not nh.getParam("yaml_file_path",yaml_file_path))
+  if(not pnh.getParam("yaml_file_path",yaml_file_path))
   {
     yaml_file_path = "/config/test_graph_core.yaml";
     ROS_ERROR_STREAM("yaml_file_path not defined, using "<<yaml_file_path);
@@ -76,7 +80,7 @@ int main(int argc, char **argv)
   }
 
   // Update the planning scene
-  graph_core::DisplayPtr display = std::make_shared<graph_core::Display>(planning_scene,group_name,kinematic_model->getLinkModelNames().back());
+  graph_display::DisplayPtr display = std::make_shared<graph_display::Display>(planning_scene,group_name,kinematic_model->getLinkModelNames().back());
   kinematic_model->getLinkModelNames();
   ros::WallDuration(1).sleep();
 
@@ -121,30 +125,58 @@ int main(int argc, char **argv)
 
   // Set-up planning tools
   int n_threads = 4;
-  nh.getParam("parallel_checker_n_threads",n_threads);
+  n_threads = config["parallel_checker_n_threads"].as<int>();
 
   double checker_resolution = 0.01;
-  nh.getParam("checker_resolution",checker_resolution);
+  checker_resolution = config["checker_resolution"].as<double>();
 
   std::string logger_file = package_path+"/config/logger_param.yaml";
   cnr_logger::TraceLoggerPtr logger = std::make_shared<cnr_logger::TraceLogger>("test_graph_core",logger_file);
-  graph_core::CollisionCheckerPtr checker = std::make_shared<graph_core::ParallelMoveitCollisionChecker>(planning_scene, group_name, logger, n_threads, checker_resolution);
+  graph_core::CollisionCheckerPtr checker = std::make_shared<graph_ros1::ParallelMoveitCollisionChecker>(planning_scene, group_name, logger, n_threads, checker_resolution);
   graph_core::SamplerPtr sampler = std::make_shared<graph_core::InformedSampler>(start_conf,goal_conf,lb,ub,logger);
   graph_core::MetricsPtr metrics = std::make_shared<graph_core::Metrics>(logger);
-  graph_core::RRTPtr solver = std::make_shared<graph_core::RRT>(metrics,checker,sampler,logger);
+
+  std::string planner = "RRT";
+  planner = config["planner"].as<std::string>();
+
+  graph_core::TreeSolverPtr solver;
+  if(planner == "RRT")
+    solver = std::make_shared<graph_core::RRT>(metrics,checker,sampler,logger);
+  else if(planner == "RRTCONNECT")
+    solver = std::make_shared<graph_core::BiRRT>(metrics,checker,sampler,logger);
+  else if(planner == "ANYTIMERRT")
+    solver = std::make_shared<graph_core::AnytimeRRT>(metrics,checker,sampler,logger);
+  else if(planner == "RRT*")
+    solver = std::make_shared<graph_core::RRTStar>(metrics,checker,sampler,logger);
+  else
+  {
+    CNR_ERROR(logger,"Solver not available: "<<planner);
+    return 1;
+  }
 
   graph_core::PathPtr solution;
   ros::WallTime tic = ros::WallTime::now();
   if(solver->computePath(start_conf,goal_conf,config,solution,10.0,1000000))
   {
     ROS_INFO_STREAM("Solution found!\n"<<*solution);
-    display->displayPath(solution);
+    display->displayPathAndWaypoints(solution);
+    display->displayTree(solution->getTree(),"graph_display",{0.0,0.0,1.0,0.5});
 
-//    while(ros::ok())
-//    {
-//      ros::WallDuration(1).sleep();
-//      display->displayPath(solution);
-//    }
+    std::cout << "Press Enter to rewire the solution with RRT* and informed sampling";
+    std::getchar();
+
+    graph_core::RRTStarPtr rrt_star = std::make_shared<graph_core::RRTStar>(metrics,checker,sampler,logger);
+    rrt_star->importFromSolver(solver);
+    rrt_star->setSolution(solution);
+    if(rrt_star->solve(solution,1000000,10.0))
+    {
+      ROS_INFO_STREAM("Solution found!\n"<<*solution);
+      display->clearMarkers();
+      display->displayPathAndWaypoints(solution);
+      display->displayTree(solution->getTree(),"graph_display",{0.0,0.0,1.0,0.5});
+    }
+    else
+      ROS_ERROR_STREAM("No better solution found");
   }
   else
     ROS_ERROR_STREAM("Solution not found in "<<(ros::WallTime::now()-tic).toSec()<<" seconds");
