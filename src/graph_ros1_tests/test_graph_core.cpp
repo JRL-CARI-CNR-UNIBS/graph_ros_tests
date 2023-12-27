@@ -160,7 +160,7 @@ int main(int argc, char **argv)
   {
     ROS_INFO_STREAM("Solution found!\n"<<*solution);
     display->displayPathAndWaypoints(solution);
-    display->displayTree(solution->getTree(),"graph_display",{0.0,0.0,1.0,0.5});
+    display->displayTree(solution->getTree(),"graph_display",{0.0,0.0,1.0,0.15});
 
     std::cout << "Press Enter to rewire the solution with RRT* and informed sampling";
     std::getchar();
@@ -173,10 +173,33 @@ int main(int argc, char **argv)
       ROS_INFO_STREAM("Solution found!\n"<<*solution);
       display->clearMarkers();
       display->displayPathAndWaypoints(solution);
-      display->displayTree(solution->getTree(),"graph_display",{0.0,0.0,1.0,0.5});
+      display->displayTree(solution->getTree(),"graph_display",{0.0,0.0,1.0,0.15});
     }
     else
       ROS_ERROR_STREAM("No better solution found");
+
+    YAML::Node yaml_path = solution->toYAML();
+    YAML::Node yaml_tree = solution->getTree()->toYAML();
+
+    std::ofstream fout_path(package_path+"/config/path.yaml");
+    std::ofstream fout_tree(package_path+"/config/tree.yaml");
+
+    if (fout_path.is_open())
+    {
+      fout_path << yaml_path;
+      fout_path.close();
+    }
+    else
+      CNR_ERROR(logger,"Error opening 'path.yaml' for writing.");
+
+    if (fout_tree.is_open())
+    {
+      fout_tree << yaml_tree;
+      fout_tree.close();
+    }
+    else
+      CNR_ERROR(logger,"Error opening 'tree.yaml' for writing.");
+
   }
   else
     ROS_ERROR_STREAM("Solution not found in "<<(ros::WallTime::now()-tic).toSec()<<" seconds");
