@@ -8,4 +8,4 @@ use_kdtree: true
 checker_resolution: 0.01
 parallel_checker_n_threads: 4
 
-planner: RRT #RRT, RRTCONNECT, RRT*, ANYTIMERRT
+planner: ANYTIMERRT #RRT, RRTCONNECT, RRT*, ANYTIMERRT
