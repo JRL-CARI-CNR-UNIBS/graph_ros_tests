@@ -9,9 +9,9 @@
   <node pkg="graph_ros1_tests"
         name="test_graph_core"
         type="test_graph_core"
-        output="screen"
-        launch-prefix="gdb -ex run --args" >
+        output="screen">
         <param name = "yaml_file_path" value = "/config/test_graph_core.yaml" />
   </node>
 
 </launch>
+<!--          launch-prefix="gdb -ex run -X-args" >-->

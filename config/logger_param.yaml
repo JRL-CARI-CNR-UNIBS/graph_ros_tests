@@ -1,3 +1,4 @@
 appenders: ["file", "screen"]
 levels: ["debug", "debug"]
-file_name: "test_graph_ros_log"
+pattern_layout: '[%M:%L]: %m%n'
+# file_name: "test_graph_ros_log"
