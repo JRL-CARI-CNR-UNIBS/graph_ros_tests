@@ -14,7 +14,7 @@
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "test_graph_core");
+  ros::init(argc, argv, "test_solver");
   ros::AsyncSpinner spinner(4);
   spinner.start();
 
@@ -33,7 +33,7 @@ int main(int argc, char **argv)
   std::string yaml_file_path;
   if(not pnh.getParam("yaml_file_path",yaml_file_path))
   {
-    yaml_file_path = "/config/test_graph_core.yaml";
+    yaml_file_path = "/config/test_solver.yaml";
     ROS_ERROR_STREAM("yaml_file_path not defined, using "<<yaml_file_path);
   }
 
@@ -131,7 +131,7 @@ int main(int argc, char **argv)
   checker_resolution = config["checker_resolution"].as<double>();
 
   std::string logger_file = package_path+"/config/logger_param.yaml";
-  cnr_logger::TraceLoggerPtr logger = std::make_shared<cnr_logger::TraceLogger>("test_graph_core",logger_file);
+  cnr_logger::TraceLoggerPtr logger = std::make_shared<cnr_logger::TraceLogger>("test_solver",logger_file);
   graph_core::CollisionCheckerPtr checker = std::make_shared<graph_ros1::ParallelMoveitCollisionChecker>(planning_scene, group_name, logger, n_threads, checker_resolution);
   graph_core::SamplerPtr sampler = std::make_shared<graph_core::InformedSampler>(start_conf,goal_conf,lb,ub,logger);
   graph_core::MetricsPtr metrics = std::make_shared<graph_core::Metrics>(logger);
@@ -156,7 +156,10 @@ int main(int argc, char **argv)
 
   graph_core::PathPtr solution;
   ros::WallTime tic = ros::WallTime::now();
-  if(solver->computePath(start_conf,goal_conf,config,solution,10.0,1000000))
+  graph_core::NodePtr start_node = std::make_shared<graph_core::Node>(start_conf,logger);
+  graph_core::NodePtr goal_node = std::make_shared<graph_core::Node>(goal_conf,logger);
+
+  if(solver->computePath(start_node,goal_node,config,solution,10.0,1000000))
   {
     ROS_INFO_STREAM("Solution found!\n"<<*solution);
     display->displayPathAndWaypoints(solution);

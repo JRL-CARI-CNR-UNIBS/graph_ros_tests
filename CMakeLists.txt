@@ -22,7 +22,12 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   )
 
-add_executable(test_graph_core src/${PROJECT_NAME}/test_graph_core.cpp)
-target_link_libraries(test_graph_core
+add_executable(test_solver src/${PROJECT_NAME}/test_solver.cpp)
+target_link_libraries(test_solver
+  ${catkin_LIBRARIES}
+  )
+
+add_executable(test_path src/${PROJECT_NAME}/test_path.cpp)
+target_link_libraries(test_path
   ${catkin_LIBRARIES}
   )
