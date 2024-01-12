@@ -154,7 +154,23 @@ int main(int argc, char **argv)
   ros::WallDuration(1.0).sleep();
   display->clearMarkers();
   display->displayPathAndWaypoints(path);
-  display->displayTree(tree,"graph_display",{0.0,0.0,1.0,0.15});
+  display->displayTree(tree,"graph_display",{0.0,0.0,1.0,0.01});
+
+  ROS_INFO("Flip the path");
+  path->flip();
+  ROS_INFO_STREAM("Flipped path\n "<<*path);
+
+  ROS_INFO("Warp");
+  path->warp(0.1,10);
+  ROS_INFO_STREAM("Path after warp \n "<<*path);
+
+  display->displayPathAndWaypoints(path,"graph_display",{0.0,1.0,0.0,1});
+
+  ROS_INFO("Simplify");
+  path->simplify(0.5);
+  ROS_INFO_STREAM("Path after simplify \n "<<*path);
+
+  display->displayPathAndWaypoints(path,"graph_display",{1.0,1.0,0.0,1});
 
   return 0;
 }
