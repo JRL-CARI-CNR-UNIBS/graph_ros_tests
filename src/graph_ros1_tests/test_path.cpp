@@ -3,9 +3,10 @@
 #include <moveit/robot_model_loader/robot_model_loader.h>
 #include <moveit/move_group_interface/move_group_interface.h>
 
-#include <graph_ros1/parallel_moveit_collision_checker.h>
 #include <graph_display/graph_display.h>
 #include <graph_core/metrics/euclidean_metrics.h>
+#include <graph_ros1/parallel_moveit_collision_checker.h>
+#include <graph_core/solvers/path_optimizers/path_local_optimizer.h>
 
 int main(int argc, char **argv)
 {
@@ -161,17 +162,31 @@ int main(int argc, char **argv)
   path->flip();
   ROS_INFO_STREAM("Flipped path\n "<<*path);
 
-  ROS_INFO("Warp");
-  path->warp(0.1,10);
-  ROS_INFO_STREAM("Path after warp \n "<<*path);
+  ROS_INFO("Warp on cloned path");
+  double warp_min_conn_length = 0.1;
+  warp_min_conn_length = config["warp_min_conn_length"].as<double>();
 
-  display->displayPathAndWaypoints(path,"graph_display",{0.0,1.0,0.0,1});
+  double warp_min_step_size = 0.1;
+  warp_min_step_size = config["warp_min_step_size"].as<double>();
 
-  ROS_INFO("Simplify");
-  path->simplify(0.5);
-  ROS_INFO_STREAM("Path after simplify \n "<<*path);
+  graph::core::PathPtr warp_path = path->clone();
+  graph::core::PathLocalOptimizerPtr path_opt = std::make_shared<graph::core::PathLocalOptimizer>(checker,metrics,logger);
+  path_opt->setPath(warp_path);
+  path_opt->warp(warp_min_conn_length,warp_min_step_size);
+  ROS_INFO_STREAM("Path after warp \n "<<*warp_path);
 
-  display->displayPathAndWaypoints(path,"graph_display",{1.0,1.0,0.0,1});
+  display->displayPathAndWaypoints(warp_path,"graph_display",{0.0,1.0,0.0,1});
+
+  ROS_INFO("Simplify on cloned path");
+  double simplify_max_conn_length = 0.1;
+  simplify_max_conn_length = config["simplify_max_conn_length"].as<double>();
+
+  graph::core::PathPtr simplify_path = path->clone();
+  path_opt->setPath(simplify_path);
+  path_opt->simplify(simplify_max_conn_length);
+  ROS_INFO_STREAM("Path after simplify \n "<<*simplify_path);
+
+  display->displayPathAndWaypoints(simplify_path,"graph_display",{1.0,1.0,0.0,1});
 
   return 0;
 }

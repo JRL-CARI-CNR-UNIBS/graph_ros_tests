@@ -9,7 +9,7 @@
 #include <graph_core/solvers/birrt.h>
 #include <graph_core/solvers/anytime_rrt.h>
 #include <graph_core/solvers/rrt_star.h>
-#include <graph_core/metrics/euclidean_metrics.h>.h>
+#include <graph_core/metrics/euclidean_metrics.h>
 #include <graph_display/graph_display.h>
 
 int main(int argc, char **argv)
