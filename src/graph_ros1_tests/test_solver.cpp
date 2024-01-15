@@ -80,7 +80,7 @@ int main(int argc, char **argv)
   }
 
   // Update the planning scene
-  graph_display::DisplayPtr display = std::make_shared<graph_display::Display>(planning_scene,group_name,kinematic_model->getLinkModelNames().back());
+  graph::display::DisplayPtr display = std::make_shared<graph::display::Display>(planning_scene,group_name,kinematic_model->getLinkModelNames().back());
   kinematic_model->getLinkModelNames();
   ros::WallDuration(1).sleep();
 
@@ -132,32 +132,32 @@ int main(int argc, char **argv)
 
   std::string logger_file = package_path+"/config/logger_param.yaml";
   cnr_logger::TraceLoggerPtr logger = std::make_shared<cnr_logger::TraceLogger>("test_solver",logger_file);
-  graph_core::CollisionCheckerPtr checker = std::make_shared<graph_ros1::ParallelMoveitCollisionChecker>(planning_scene, group_name, logger, n_threads, checker_resolution);
-  graph_core::SamplerPtr sampler = std::make_shared<graph_core::InformedSampler>(start_conf,goal_conf,lb,ub,logger);
-  graph_core::MetricsPtr metrics = std::make_shared<graph_core::Metrics>(logger);
+  graph::core::CollisionCheckerPtr checker = std::make_shared<graph::ros1::ParallelMoveitCollisionChecker>(planning_scene, group_name, logger, n_threads, checker_resolution);
+  graph::core::SamplerPtr sampler = std::make_shared<graph::core::InformedSampler>(start_conf,goal_conf,lb,ub,logger);
+  graph::core::MetricsPtr metrics = std::make_shared<graph::core::Metrics>(logger);
 
   std::string planner = "RRT";
   planner = config["planner"].as<std::string>();
 
-  graph_core::TreeSolverPtr solver;
+  graph::core::TreeSolverPtr solver;
   if(planner == "RRT")
-    solver = std::make_shared<graph_core::RRT>(metrics,checker,sampler,logger);
+    solver = std::make_shared<graph::core::RRT>(metrics,checker,sampler,logger);
   else if(planner == "RRTCONNECT")
-    solver = std::make_shared<graph_core::BiRRT>(metrics,checker,sampler,logger);
+    solver = std::make_shared<graph::core::BiRRT>(metrics,checker,sampler,logger);
   else if(planner == "ANYTIMERRT")
-    solver = std::make_shared<graph_core::AnytimeRRT>(metrics,checker,sampler,logger);
+    solver = std::make_shared<graph::core::AnytimeRRT>(metrics,checker,sampler,logger);
   else if(planner == "RRT*")
-    solver = std::make_shared<graph_core::RRTStar>(metrics,checker,sampler,logger);
+    solver = std::make_shared<graph::core::RRTStar>(metrics,checker,sampler,logger);
   else
   {
     CNR_ERROR(logger,"Solver not available: "<<planner);
     return 1;
   }
 
-  graph_core::PathPtr solution;
+  graph::core::PathPtr solution;
   ros::WallTime tic = ros::WallTime::now();
-  graph_core::NodePtr start_node = std::make_shared<graph_core::Node>(start_conf,logger);
-  graph_core::NodePtr goal_node = std::make_shared<graph_core::Node>(goal_conf,logger);
+  graph::core::NodePtr start_node = std::make_shared<graph::core::Node>(start_conf,logger);
+  graph::core::NodePtr goal_node = std::make_shared<graph::core::Node>(goal_conf,logger);
 
   if(solver->computePath(start_node,goal_node,config,solution,10.0,1000000))
   {
@@ -168,7 +168,7 @@ int main(int argc, char **argv)
     std::cout << "Press Enter to rewire the solution with RRT* and informed sampling";
     std::getchar();
 
-    graph_core::RRTStarPtr rrt_star = std::make_shared<graph_core::RRTStar>(metrics,checker,sampler,logger);
+    graph::core::RRTStarPtr rrt_star = std::make_shared<graph::core::RRTStar>(metrics,checker,sampler,logger);
     rrt_star->importFromSolver(solver);
     rrt_star->setSolution(solution);
     if(rrt_star->solve(solution,1000000,10.0))

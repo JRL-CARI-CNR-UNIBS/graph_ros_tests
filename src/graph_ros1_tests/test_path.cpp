@@ -74,7 +74,7 @@ int main(int argc, char **argv)
   }
 
   // Update the planning scene
-  graph_display::DisplayPtr display = std::make_shared<graph_display::Display>(planning_scene,group_name,kinematic_model->getLinkModelNames().back());
+  graph::display::DisplayPtr display = std::make_shared<graph::display::Display>(planning_scene,group_name,kinematic_model->getLinkModelNames().back());
   kinematic_model->getLinkModelNames();
   ros::WallDuration(1).sleep();
 
@@ -113,8 +113,8 @@ int main(int argc, char **argv)
 
   std::string logger_file = package_path+"/config/logger_param.yaml";
   cnr_logger::TraceLoggerPtr logger = std::make_shared<cnr_logger::TraceLogger>("test_path",logger_file);
-  graph_core::CollisionCheckerPtr checker = std::make_shared<graph_ros1::ParallelMoveitCollisionChecker>(planning_scene, group_name, logger, n_threads, checker_resolution);
-  graph_core::MetricsPtr metrics = std::make_shared<graph_core::Metrics>(logger);
+  graph::core::CollisionCheckerPtr checker = std::make_shared<graph::ros1::ParallelMoveitCollisionChecker>(planning_scene, group_name, logger, n_threads, checker_resolution);
+  graph::core::MetricsPtr metrics = std::make_shared<graph::core::Metrics>(logger);
 
   std::string path_file_name = "config/path.yaml";
   path_file_name = config["path_file_name"].as<std::string>();
@@ -142,8 +142,8 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  graph_core::PathPtr path = graph_core::Path::fromYAML(yaml_path,metrics,checker,logger);
-  graph_core::TreePtr tree = graph_core::Tree::fromYAML(yaml_tree,max_distance,checker,metrics,logger,use_kdtree);
+  graph::core::PathPtr path = graph::core::Path::fromYAML(yaml_path,metrics,checker,logger);
+  graph::core::TreePtr tree = graph::core::Tree::fromYAML(yaml_tree,max_distance,checker,metrics,logger,use_kdtree);
   path->setTree(tree);
 
   tree->print_full_tree_ = true;
