@@ -4,12 +4,12 @@
 #include <moveit/move_group_interface/move_group_interface.h>
 
 #include <graph_ros1/parallel_moveit_collision_checker.h>
-#include <graph_core/informed_sampler.h>
+#include <graph_core/samplers/informed_sampler.h>
 #include <graph_core/solvers/rrt.h>
 #include <graph_core/solvers/birrt.h>
 #include <graph_core/solvers/anytime_rrt.h>
 #include <graph_core/solvers/rrt_star.h>
-#include <graph_core/metrics.h>
+#include <graph_core/metrics/euclidean_metrics.h>.h>
 #include <graph_display/graph_display.h>
 
 int main(int argc, char **argv)
@@ -134,7 +134,7 @@ int main(int argc, char **argv)
   cnr_logger::TraceLoggerPtr logger = std::make_shared<cnr_logger::TraceLogger>("test_solver",logger_file);
   graph::core::CollisionCheckerPtr checker = std::make_shared<graph::ros1::ParallelMoveitCollisionChecker>(planning_scene, group_name, logger, n_threads, checker_resolution);
   graph::core::SamplerPtr sampler = std::make_shared<graph::core::InformedSampler>(start_conf,goal_conf,lb,ub,logger);
-  graph::core::MetricsPtr metrics = std::make_shared<graph::core::Metrics>(logger);
+  graph::core::MetricsPtr metrics = std::make_shared<graph::core::EuclideanMetrics>(logger);
 
   std::string planner = "RRT";
   planner = config["planner"].as<std::string>();

@@ -5,6 +5,7 @@
 
 #include <graph_ros1/parallel_moveit_collision_checker.h>
 #include <graph_display/graph_display.h>
+#include <graph_core/metrics/euclidean_metrics.h>
 
 int main(int argc, char **argv)
 {
@@ -114,7 +115,7 @@ int main(int argc, char **argv)
   std::string logger_file = package_path+"/config/logger_param.yaml";
   cnr_logger::TraceLoggerPtr logger = std::make_shared<cnr_logger::TraceLogger>("test_path",logger_file);
   graph::core::CollisionCheckerPtr checker = std::make_shared<graph::ros1::ParallelMoveitCollisionChecker>(planning_scene, group_name, logger, n_threads, checker_resolution);
-  graph::core::MetricsPtr metrics = std::make_shared<graph::core::Metrics>(logger);
+  graph::core::MetricsPtr metrics = std::make_shared<graph::core::EuclideanMetrics>(logger);
 
   std::string path_file_name = "config/path.yaml";
   path_file_name = config["path_file_name"].as<std::string>();
