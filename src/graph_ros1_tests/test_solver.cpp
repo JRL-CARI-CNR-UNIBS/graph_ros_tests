@@ -3,7 +3,7 @@
 #include <moveit/robot_model_loader/robot_model_loader.h>
 #include <moveit/move_group_interface/move_group_interface.h>
 
-#include <graph_ros1/parallel_moveit_collision_checker.h>
+#include <graph_ros1/collision_checkers/parallel_moveit_collision_checker.h>
 #include <graph_core/samplers/informed_sampler.h>
 #include <graph_core/solvers/rrt.h>
 #include <graph_core/solvers/birrt.h>

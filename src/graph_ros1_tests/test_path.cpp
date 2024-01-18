@@ -5,7 +5,7 @@
 
 #include <graph_display/graph_display.h>
 #include <graph_core/metrics/euclidean_metrics.h>
-#include <graph_ros1/parallel_moveit_collision_checker.h>
+#include <graph_ros1/collision_checkers/parallel_moveit_collision_checker.h>
 #include <graph_core/solvers/path_optimizers/path_local_optimizer.h>
 
 int main(int argc, char **argv)
