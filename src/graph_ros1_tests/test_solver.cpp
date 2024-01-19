@@ -3,14 +3,14 @@
 #include <moveit/robot_model_loader/robot_model_loader.h>
 #include <moveit/move_group_interface/move_group_interface.h>
 
-#include <graph_ros1/collision_checkers/parallel_moveit_collision_checker.h>
-#include <graph_core/samplers/informed_sampler.h>
-#include <graph_core/solvers/rrt.h>
-#include <graph_core/solvers/birrt.h>
-#include <graph_core/solvers/anytime_rrt.h>
 #include <graph_core/solvers/rrt_star.h>
-#include <graph_core/metrics/euclidean_metrics.h>
 #include <graph_display/graph_display.h>
+
+#include <pluginlib/class_loader.h>
+#include <graph_ros1/plugins/solvers/tree_solver_plugin.h>
+#include <graph_ros1/plugins/collision_checkers/collision_checker_base_plugin.h>
+#include <graph_ros1/plugins/samplers/sampler_base_plugin.h>
+#include <graph_ros1/plugins/metrics/metrics_base_plugin.h>
 
 int main(int argc, char **argv)
 {
@@ -124,35 +124,62 @@ int main(int argc, char **argv)
   ROS_INFO_STREAM("Goal conf: " <<goal_conf .transpose());
 
   // Set-up planning tools
-  int n_threads = 4;
-  n_threads = config["parallel_checker_n_threads"].as<int>();
-
-  double checker_resolution = 0.01;
-  checker_resolution = config["checker_resolution"].as<double>();
-
   std::string logger_file = package_path+"/config/logger_param.yaml";
   cnr_logger::TraceLoggerPtr logger = std::make_shared<cnr_logger::TraceLogger>("test_solver",logger_file);
-  graph::core::CollisionCheckerPtr checker = std::make_shared<graph::ros1::ParallelMoveitCollisionChecker>(planning_scene, group_name, logger, n_threads, checker_resolution);
-  graph::core::SamplerPtr sampler = std::make_shared<graph::core::InformedSampler>(start_conf,goal_conf,lb,ub,logger);
-  graph::core::MetricsPtr metrics = std::make_shared<graph::core::EuclideanMetrics>(logger);
+  graph::core::GoalCostFunctionPtr goal_cost_fcn = std::make_shared<graph::core::GoalCostFunction>();
 
-  std::string planner = "RRT";
-  planner = config["planner"].as<std::string>();
+  // Load collision checker plugin
+  pluginlib::ClassLoader<graph::ros1::CollisionCheckerBasePlugin> checker_plugin_loader("graph_ros1", "graph::ros1::CollisionCheckerBasePlugin");
 
-  graph::core::TreeSolverPtr solver;
-  if(planner == "RRT")
-    solver = std::make_shared<graph::core::RRT>(metrics,checker,sampler,logger);
-  else if(planner == "RRTCONNECT")
-    solver = std::make_shared<graph::core::BiRRT>(metrics,checker,sampler,logger);
-  else if(planner == "ANYTIMERRT")
-    solver = std::make_shared<graph::core::AnytimeRRT>(metrics,checker,sampler,logger);
-  else if(planner == "RRT*")
-    solver = std::make_shared<graph::core::RRTStar>(metrics,checker,sampler,logger);
-  else
-  {
-    CNR_ERROR(logger,"Solver not available: "<<planner);
-    return 1;
-  }
+  std::string checker_plugin_name = "graph::ros1::ParallelMoveitCollisionCheckerPlugin";
+  checker_plugin_name = config["checker_plugin"].as<std::string>();
+
+  ROS_INFO_STREAM("Loading checker "<<checker_plugin_name);
+  boost::shared_ptr<graph::ros1::CollisionCheckerBasePlugin> checker_plugin = checker_plugin_loader.createInstance(checker_plugin_name);
+
+  ROS_INFO_STREAM("Configuring checker plugin ");
+  checker_plugin->init(nh,planning_scene,logger);
+  graph::core::CollisionCheckerPtr checker = checker_plugin->getCollisionChecker();
+
+  // Load collision sampler plugin
+  pluginlib::ClassLoader<graph::ros1::SamplerBasePlugin> sampler_plugin_loader("graph_ros1", "graph::ros1::SamplerBasePlugin");
+
+  std::string sampler_plugin_name = "graph::ros1::InformedSamplerPlugin";
+  sampler_plugin_name = config["sampler_plugin"].as<std::string>();
+
+  ROS_INFO_STREAM("Loading sampler "<<sampler_plugin_name);
+  boost::shared_ptr<graph::ros1::SamplerBasePlugin> sampler_plugin = sampler_plugin_loader.createInstance(sampler_plugin_name);
+
+  ROS_INFO_STREAM("Configuring sampler plugin ");
+  Eigen::VectorXd scale(dof); scale.setOnes(dof,1);
+  sampler_plugin->init(nh,start_conf,goal_conf,lb,ub,scale,logger);
+  graph::core::SamplerPtr sampler = sampler_plugin->getSampler();
+
+  // Load collision metrics plugin
+  pluginlib::ClassLoader<graph::ros1::MetricsBasePlugin> metrics_plugin_loader("graph_ros1", "graph::ros1::MetricsBasePlugin");
+
+  std::string metrics_plugin_name = "graph::ros1::EuclideanMetricsPlugin";
+  metrics_plugin_name = config["metrics_plugin"].as<std::string>();
+
+  ROS_INFO_STREAM("Loading metrics "<<metrics_plugin_name);
+  boost::shared_ptr<graph::ros1::MetricsBasePlugin> metrics_plugin = metrics_plugin_loader.createInstance(metrics_plugin_name);
+
+  ROS_INFO_STREAM("Configuring metrics plugin ");
+  metrics_plugin->init(nh,logger);
+  graph::core::MetricsPtr metrics = metrics_plugin->getMetrics();
+
+  // Load planner plugin
+  pluginlib::ClassLoader<graph::ros1::TreeSolverPlugin> solver_plugin_loader("graph_ros1", "graph::ros1::TreeSolverPlugin");
+
+  std::string planner_plugin_name = "graph::ros1::RRTPlugin";
+  planner_plugin_name = config["planner_plugin"].as<std::string>();
+
+  ROS_INFO_STREAM("Loading plugin "<<planner_plugin_name);
+  boost::shared_ptr<graph::ros1::TreeSolverPlugin> solver_plugin = solver_plugin_loader.createInstance(planner_plugin_name);
+
+  ROS_INFO_STREAM("Configuring solver plugin ");
+  solver_plugin->init(nh,metrics,checker,sampler,goal_cost_fcn,logger);
+  graph::core::TreeSolverPtr solver = solver_plugin->getSolver();
 
   graph::core::PathPtr solution;
   ros::WallTime tic = ros::WallTime::now();

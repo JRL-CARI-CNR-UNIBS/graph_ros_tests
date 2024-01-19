@@ -8,4 +8,10 @@ use_kdtree: true
 checker_resolution: 0.01
 parallel_checker_n_threads: 4
 
-planner: ANYTIMERRT #RRT, RRTCONNECT, RRT*, ANYTIMERRT
+# planner: RRT, BiRRT, RRT*, ANYTIMERRT
+planner_plugin: graph::ros1::AnytimeRRTPlugin
+checker_plugin: graph::ros1::ParallelMoveitCollisionCheckerPlugin
+sampler_plugin: graph::ros1::InformedSamplerPlugin
+metrics_plugin: graph::ros1::EuclideanMetricsPlugin
+
+
