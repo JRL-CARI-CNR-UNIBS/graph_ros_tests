@@ -4,5 +4,6 @@ kdev4/
 *.txt.user*
 *.orig*
 *.autosave*
-config/path.yaml
-config/tree.yaml
+
+path.yaml
+tree.yaml
