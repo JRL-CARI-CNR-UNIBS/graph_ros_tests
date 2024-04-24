@@ -13,8 +13,9 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "test_path");
   ros::AsyncSpinner spinner(4);
   spinner.start();
+  ros::NodeHandle nh;
 
-  // Load YAML file into a YAML::Node
+  // Load logger configuration file
   std::string package_name = "graph_ros1_tests";
   std::string package_path = ros::package::getPath(package_name);
 
@@ -24,36 +25,14 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  ros::NodeHandle nh;
-  ros::NodeHandle pnh("~");
-  std::string yaml_file_path;
-  if(not pnh.getParam("yaml_file_path",yaml_file_path))
-  {
-    yaml_file_path = "/config/test_path.yaml";
-    ROS_ERROR_STREAM("yaml_file_path not defined, using "<<yaml_file_path);
-  }
-
-  std::string yaml_file = package_path+yaml_file_path;
-  ROS_INFO_STREAM("Yaml file: "<<yaml_file);
-
-  YAML::Node config;
-
-  try {
-    config = YAML::LoadFile(yaml_file);
-  } catch (const YAML::Exception& e) {
-    ROS_ERROR_STREAM("Error loading YAML file: "<<e.what());
-    return 1;
-  }
+  std::string logger_file = package_path+"/config/logger_param.yaml";
+  cnr_logger::TraceLoggerPtr logger = std::make_shared<cnr_logger::TraceLogger>("test_path",logger_file);
 
   // Get the robot description
+  std::string param_ns = "/graph_ros1_test_path";
   std::string group_name;
-  if (config["group_name"])
-    group_name = config["group_name"].as<std::string>();
-  else
-  {
-    ROS_ERROR_STREAM("Parameter 'group_name' not found.");
+  if(not graph::core::get_param(logger,param_ns,"group_name",group_name))
     return 1;
-  }
 
   robot_model_loader::RobotModelLoader robot_model_loader("robot_description");
   robot_model::RobotModelPtr kinematic_model = robot_model_loader.getModel();
@@ -101,28 +80,26 @@ int main(int argc, char **argv)
   }
 
   // Set-up planning tools
-  int n_threads = 4;
-  n_threads = config["parallel_checker_n_threads"].as<int>();
+  int n_threads;
+  graph::core::get_param(logger,param_ns,"parallel_checker_n_threads",n_threads,4);
 
-  double checker_resolution = 0.01;
-  checker_resolution = config["checker_resolution"].as<double>();
+  double checker_resolution;
+  graph::core::get_param(logger,param_ns,"checker_resolution",checker_resolution,0.01);
 
-  double max_distance = 1.0;
-  max_distance = config["max_distance"].as<double>();
+  double max_distance;
+  graph::core::get_param(logger,param_ns,"max_distance",max_distance,1.0);
 
   bool use_kdtree = true;
-  use_kdtree = config["use_kdtree"].as<bool>();
+  graph::core::get_param(logger,param_ns,"use_kdtree",use_kdtree,true);
 
-  std::string logger_file = package_path+"/config/logger_param.yaml";
-  cnr_logger::TraceLoggerPtr logger = std::make_shared<cnr_logger::TraceLogger>("test_path",logger_file);
   graph::core::CollisionCheckerPtr checker = std::make_shared<graph::ros1::ParallelMoveitCollisionChecker>(planning_scene, group_name, logger, n_threads, checker_resolution);
   graph::core::MetricsPtr metrics = std::make_shared<graph::core::EuclideanMetrics>(logger);
 
-  std::string path_file_name = "config/path.yaml";
-  path_file_name = config["path_file_name"].as<std::string>();
+  std::string path_file_name;
+  graph::core::get_param(logger,param_ns,"path_file_name",path_file_name,(std::string)"config/path.yaml");
 
-  std::string tree_file_name = "config/tree.yaml";
-  tree_file_name = config["tree_file_name"].as<std::string>();
+  std::string tree_file_name;
+  graph::core::get_param(logger,param_ns,"tree_file_name",tree_file_name,(std::string)"config/tree.yaml");
 
   YAML::Node yaml_path, yaml_tree;
 
@@ -163,11 +140,11 @@ int main(int argc, char **argv)
   ROS_INFO_STREAM("Flipped path\n "<<*path);
 
   ROS_INFO("Warp on cloned path");
-  double warp_min_conn_length = 0.1;
-  warp_min_conn_length = config["warp_min_conn_length"].as<double>();
+  double warp_min_conn_length;
+  graph::core::get_param(logger,param_ns,"warp_min_conn_length",warp_min_conn_length,0.1);
 
-  double warp_min_step_size = 0.1;
-  warp_min_step_size = config["warp_min_step_size"].as<double>();
+  double warp_min_step_size;
+  graph::core::get_param(logger,param_ns,"warp_min_step_size",warp_min_step_size,0.1);
 
   graph::core::PathPtr warp_path = path->clone();
   graph::core::PathLocalOptimizerPtr path_opt = std::make_shared<graph::core::PathLocalOptimizer>(checker,metrics,logger);
@@ -178,8 +155,8 @@ int main(int argc, char **argv)
   display->displayPathAndWaypoints(warp_path,"graph_display",{0.0,1.0,0.0,1});
 
   ROS_INFO("Simplify on cloned path");
-  double simplify_max_conn_length = 0.1;
-  simplify_max_conn_length = config["simplify_max_conn_length"].as<double>();
+  double simplify_max_conn_length;
+  graph::core::get_param(logger,param_ns,"simplify_max_conn_length",simplify_max_conn_length,0.1);
 
   graph::core::PathPtr simplify_path = path->clone();
   path_opt->setPath(simplify_path);

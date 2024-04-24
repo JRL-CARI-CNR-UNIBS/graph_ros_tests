@@ -1,13 +1,14 @@
-group_name: "cartesian_arm"
-utopia_tolerance: 0.05
-extend: false
-max_distance: 0.1
-use_kdtree: true
-checker_resolution: 0.01
-parallel_checker_n_threads: 4
-path_file_name: "/config/path.yaml"
-tree_file_name: "/config/tree.yaml"
-max_stall_gen: 5
-warp_min_step_size: 0.01
-warp_min_conn_length: 0.08
-simplify_max_conn_length: 0.5
+graph_ros1_test_path:
+  group_name: "cartesian_arm"
+  utopia_tolerance: 0.05
+  extend: false
+  max_distance: 0.1
+  use_kdtree: true
+  checker_resolution: 0.01
+  parallel_checker_n_threads: 4
+  path_file_name: "/config/path.yaml"
+  tree_file_name: "/config/tree.yaml"
+  max_stall_gen: 5
+  warp_min_step_size: 0.01
+  warp_min_conn_length: 0.08
+  simplify_max_conn_length: 0.5

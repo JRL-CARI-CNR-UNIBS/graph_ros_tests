@@ -1,17 +1,18 @@
-group_name: "cartesian_arm"
-start_configuration: [0.01,0.01,0.01]
-goal_configuration:  [0.99,0.99,0.99]
-utopia_tolerance: 0.05
-extend: false
-max_distance: 0.1
-use_kdtree: true
-checker_resolution: 0.01
-parallel_checker_n_threads: 4
+graph_ros1_test_solver:
+  group_name: "cartesian_arm"
+  start_configuration: [0.01,0.01,0.01]
+  goal_configuration:  [0.99,0.99,0.99]
+  utopia_tolerance: 0.05
+  extend: false
+  max_distance: 0.1
+  use_kdtree: true
+  checker_resolution: 0.01
+  parallel_checker_n_threads: 4
 
-# planner: RRT, BiRRT, RRT*, ANYTIMERRT
-planner_plugin: graph::ros1::AnytimeRRTPlugin
-checker_plugin: graph::ros1::ParallelMoveitCollisionCheckerPlugin
-sampler_plugin: graph::ros1::InformedSamplerPlugin
-metrics_plugin: graph::ros1::EuclideanMetricsPlugin
+  # planner: RRT, BiRRT, RRT*, ANYTIMERRT
+  planner_plugin: graph::ros1::AnytimeRRTPlugin
+  checker_plugin: graph::ros1::ParallelMoveitCollisionCheckerPlugin
+  sampler_plugin: graph::ros1::InformedSamplerPlugin
+  metrics_plugin: graph::ros1::EuclideanMetricsPlugin
 
 
