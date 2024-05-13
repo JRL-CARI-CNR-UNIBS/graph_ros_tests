@@ -10,29 +10,27 @@ find_package(catkin REQUIRED COMPONENTS
   graph_display
   )
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(YAML_CPP REQUIRED yaml-cpp)
+find_package(graph_core REQUIRED)
 
 catkin_package(
   # INCLUDE_DIRS include
   # LIBRARIES graph_ros1_tests
-    CATKIN_DEPENDS graph_ros1 graph_display
-    DEPENDS YAML_CPP
+  CATKIN_DEPENDS graph_ros1 graph_display
+  DEPENDS graph_core
   )
 
 include_directories(
-  # include
   ${catkin_INCLUDE_DIRS}
   )
 
 add_executable(test_solver src/${PROJECT_NAME}/test_solver.cpp)
 target_link_libraries(test_solver
   ${catkin_LIBRARIES}
-  ${YAML_CPP_LIBRARIES}
+  graph_core::graph_core
   )
 
 add_executable(test_path src/${PROJECT_NAME}/test_path.cpp)
 target_link_libraries(test_path
   ${catkin_LIBRARIES}
-  ${YAML_CPP_LIBRARIES}
+  graph_core::graph_core
   )

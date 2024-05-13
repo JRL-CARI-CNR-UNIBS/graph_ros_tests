@@ -33,9 +33,10 @@ int main(int argc, char **argv)
   cnr_logger::TraceLoggerPtr logger = std::make_shared<cnr_logger::TraceLogger>("test_solver",logger_file);
 
   // Get the robot description
-  std::string param_ns = "/graph_ros1_test_solver";
+  std::string param_ns1 = "/"+package_name;
+  std::string param_ns2 = param_ns1+"/test_solver";
   std::string group_name;
-  if(not graph::core::get_param(logger,param_ns,"group_name",group_name))
+  if(not graph::core::get_param(logger,param_ns2,"group_name",group_name))
     return 1;
 
   robot_model_loader::RobotModelLoader robot_model_loader("robot_description");
@@ -84,9 +85,9 @@ int main(int argc, char **argv)
 
   // Read start and goal configurations
   Eigen::VectorXd start_conf, goal_conf;
-  if(not graph::core::get_param(logger,param_ns,"start_configuration",start_conf))
+  if(not graph::core::get_param(logger,param_ns2,"start_configuration",start_conf))
     return 1;
-  if(not graph::core::get_param(logger,param_ns,"goal_configuration",goal_conf))
+  if(not graph::core::get_param(logger,param_ns2,"goal_configuration",goal_conf))
     return 1;
 
   ROS_INFO_STREAM("Start conf: "<<start_conf.transpose());
@@ -95,7 +96,6 @@ int main(int argc, char **argv)
   ROS_INFO_STREAM("LB conf: " <<lb .transpose());
   ROS_INFO_STREAM("UB conf: " <<ub .transpose());
 
-
   // Set-up planning tools
   graph::core::GoalCostFunctionPtr goal_cost_fcn = std::make_shared<graph::core::GoalCostFunction>();
 
@@ -103,20 +103,20 @@ int main(int argc, char **argv)
   pluginlib::ClassLoader<graph::ros1::CollisionCheckerBasePlugin> checker_plugin_loader("graph_ros1", "graph::ros1::CollisionCheckerBasePlugin");
 
   std::string checker_plugin_name;
-  graph::core::get_param(logger,param_ns,"checker_plugin",checker_plugin_name,(std::string)"graph::ros1::ParallelMoveitCollisionCheckerPlugin");
+  graph::core::get_param(logger,param_ns2,"checker_plugin",checker_plugin_name,(std::string)"graph::ros1::ParallelMoveitCollisionCheckerPlugin");
 
   ROS_INFO_STREAM("Loading checker "<<checker_plugin_name);
   boost::shared_ptr<graph::ros1::CollisionCheckerBasePlugin> checker_plugin = checker_plugin_loader.createInstance(checker_plugin_name);
 
   ROS_INFO_STREAM("Configuring checker plugin ");
-  checker_plugin->init(nh,param_ns,planning_scene,logger);
+  checker_plugin->init(nh,param_ns2,planning_scene,logger);
   graph::core::CollisionCheckerPtr checker = checker_plugin->getCollisionChecker();
 
   // Load collision sampler plugin
   pluginlib::ClassLoader<graph::ros1::SamplerBasePlugin> sampler_plugin_loader("graph_ros1", "graph::ros1::SamplerBasePlugin");
 
   std::string sampler_plugin_name;
-  graph::core::get_param(logger,param_ns,"sampler_plugin",sampler_plugin_name,(std::string)"graph::ros1::InformedSamplerPlugin");
+  graph::core::get_param(logger,param_ns2,"sampler_plugin",sampler_plugin_name,(std::string)"graph::ros1::InformedSamplerPlugin");
 
   ROS_INFO_STREAM("Loading sampler "<<sampler_plugin_name);
   boost::shared_ptr<graph::ros1::SamplerBasePlugin> sampler_plugin = sampler_plugin_loader.createInstance(sampler_plugin_name);
@@ -124,33 +124,33 @@ int main(int argc, char **argv)
   ROS_INFO_STREAM("Configuring sampler plugin ");
   Eigen::VectorXd scale(dof); scale.setOnes(dof,1);
 
-  sampler_plugin->init(nh,param_ns,start_conf,goal_conf,lb,ub,scale,logger);
+  sampler_plugin->init(nh,param_ns2,start_conf,goal_conf,lb,ub,scale,logger);
   graph::core::SamplerPtr sampler = sampler_plugin->getSampler();
 
   // Load collision metrics plugin
   pluginlib::ClassLoader<graph::ros1::MetricsBasePlugin> metrics_plugin_loader("graph_ros1", "graph::ros1::MetricsBasePlugin");
 
   std::string metrics_plugin_name = "graph::ros1::EuclideanMetricsPlugin";
-  graph::core::get_param(logger,param_ns,"metrics_plugin",metrics_plugin_name,(std::string)"graph::ros1::EuclideanMetricsPlugin");
+  graph::core::get_param(logger,param_ns2,"metrics_plugin",metrics_plugin_name,(std::string)"graph::ros1::EuclideanMetricsPlugin");
 
   ROS_INFO_STREAM("Loading metrics "<<metrics_plugin_name);
   boost::shared_ptr<graph::ros1::MetricsBasePlugin> metrics_plugin = metrics_plugin_loader.createInstance(metrics_plugin_name);
 
   ROS_INFO_STREAM("Configuring metrics plugin ");
-  metrics_plugin->init(nh,param_ns,logger);
+  metrics_plugin->init(nh,param_ns2,logger);
   graph::core::MetricsPtr metrics = metrics_plugin->getMetrics();
 
   // Load planner plugin
   pluginlib::ClassLoader<graph::ros1::TreeSolverPlugin> solver_plugin_loader("graph_ros1", "graph::ros1::TreeSolverPlugin");
 
   std::string planner_plugin_name = "graph::ros1::RRTPlugin";
-  graph::core::get_param(logger,param_ns,"planner_plugin",planner_plugin_name,(std::string)"graph::ros1::RRTPlugin");
+  graph::core::get_param(logger,param_ns2,"planner_plugin",planner_plugin_name,(std::string)"graph::ros1::RRTPlugin");
 
   ROS_INFO_STREAM("Loading plugin "<<planner_plugin_name);
   boost::shared_ptr<graph::ros1::TreeSolverPlugin> solver_plugin = solver_plugin_loader.createInstance(planner_plugin_name);
 
   ROS_INFO_STREAM("Configuring solver plugin ");
-  solver_plugin->init(nh,param_ns,metrics,checker,sampler,goal_cost_fcn,logger);
+  solver_plugin->init(nh,param_ns2,metrics,checker,sampler,goal_cost_fcn,logger);
   graph::core::TreeSolverPtr solver = solver_plugin->getSolver();
 
   graph::core::PathPtr solution;
@@ -158,7 +158,7 @@ int main(int argc, char **argv)
   graph::core::NodePtr start_node = std::make_shared<graph::core::Node>(start_conf,logger);
   graph::core::NodePtr goal_node = std::make_shared<graph::core::Node>(goal_conf,logger);
 
-  if(solver->computePath(start_node,goal_node,param_ns,solution,10.0,1000000))
+  if(solver->computePath(start_node,goal_node,param_ns2,solution,10.0,1000000))
   {
     ROS_INFO_STREAM("Solution found!\n"<<*solution);
     display->displayPathAndWaypoints(solution);
@@ -180,15 +180,20 @@ int main(int argc, char **argv)
     else
       ROS_ERROR_STREAM("No better solution found");
 
-    YAML::Node yaml_path = solution->toYAML();
-    YAML::Node yaml_tree = solution->getTree()->toYAML();
+    YAML::Node yaml_path, yaml_path_ns, yaml_tree, yaml_tree_ns;
+
+    yaml_path["path"] = solution->toYAML();
+    yaml_tree["tree"] = solution->getTree()->toYAML();
+
+    yaml_path_ns[package_name] = yaml_path;
+    yaml_tree_ns[package_name] = yaml_tree;
 
     std::ofstream fout_path(package_path+"/config/path.yaml");
     std::ofstream fout_tree(package_path+"/config/tree.yaml");
 
     if (fout_path.is_open())
     {
-      fout_path << yaml_path;
+      fout_path << yaml_path_ns;
       fout_path.close();
     }
     else
@@ -196,7 +201,7 @@ int main(int argc, char **argv)
 
     if (fout_tree.is_open())
     {
-      fout_tree << yaml_tree;
+      fout_tree << yaml_tree_ns;
       fout_tree.close();
     }
     else

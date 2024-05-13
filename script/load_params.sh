@@ -1,13 +1,10 @@
 #!/bin/bash
 
-# Check if an argument was provided
+# Check if any arguments were provided
 if [ $# -eq 0 ]; then
-    echo "Please provide the configuration file name as input."
+    echo "Please provide one or more configuration file names as input."
     exit 1
 fi
-
-# Save the input (file path) into a variable
-FILE_NAME="$1"
 
 # Get the package path
 PACKAGE_PATH=$(rospack find graph_ros1_tests)
@@ -18,14 +15,18 @@ if [ -z "$PACKAGE_PATH" ]; then
     exit 1
 fi
 
-# Check if the file exists
-if [ ! -f "$PACKAGE_PATH/config/$FILE_NAME" ]; then
-    echo "File does not exist: $PACKAGE_PATH/config/$FILE_NAME"
-    exit 1
-fi
+# Iterate over each argument passed to the script
+for FILE_NAME in "$@"
+do
+    # Check if the file exists
+    if [ ! -f "$PACKAGE_PATH/config/$FILE_NAME" ]; then
+        echo "File does not exist: $PACKAGE_PATH/config/$FILE_NAME"
+        continue # Continue with the next file name instead of exiting
+    fi
 
-# Load parameters contained in the file
-cnr_param_server --path-to-file "$PACKAGE_PATH/config/$FILE_NAME"
+    # Load parameters contained in the file
+    cnr_param_server --path-to-file "$PACKAGE_PATH/config/$FILE_NAME"
+done
 
 # Exit gracefully by returning a status
 exit 0

@@ -29,9 +29,10 @@ int main(int argc, char **argv)
   cnr_logger::TraceLoggerPtr logger = std::make_shared<cnr_logger::TraceLogger>("test_path",logger_file);
 
   // Get the robot description
-  std::string param_ns = "/graph_ros1_test_path";
+  std::string param_ns1 = "/"+package_name;
+  std::string param_ns2 = param_ns1+"/test_path";
   std::string group_name;
-  if(not graph::core::get_param(logger,param_ns,"group_name",group_name))
+  if(not graph::core::get_param(logger,param_ns2,"group_name",group_name))
     return 1;
 
   robot_model_loader::RobotModelLoader robot_model_loader("robot_description");
@@ -81,48 +82,26 @@ int main(int argc, char **argv)
 
   // Set-up planning tools
   int n_threads;
-  graph::core::get_param(logger,param_ns,"parallel_checker_n_threads",n_threads,4);
+  graph::core::get_param(logger,param_ns2,"parallel_checker_n_threads",n_threads,4);
 
   double checker_resolution;
-  graph::core::get_param(logger,param_ns,"checker_resolution",checker_resolution,0.01);
+  graph::core::get_param(logger,param_ns2,"checker_resolution",checker_resolution,0.01);
 
   double max_distance;
-  graph::core::get_param(logger,param_ns,"max_distance",max_distance,1.0);
+  graph::core::get_param(logger,param_ns2,"max_distance",max_distance,1.0);
 
   bool use_kdtree = true;
-  graph::core::get_param(logger,param_ns,"use_kdtree",use_kdtree,true);
+  graph::core::get_param(logger,param_ns2,"use_kdtree",use_kdtree,true);
 
   graph::core::CollisionCheckerPtr checker = std::make_shared<graph::ros1::ParallelMoveitCollisionChecker>(planning_scene, group_name, logger, n_threads, checker_resolution);
   graph::core::MetricsPtr metrics = std::make_shared<graph::core::EuclideanMetrics>(logger);
 
-  std::string path_file_name;
-  graph::core::get_param(logger,param_ns,"path_file_name",path_file_name,(std::string)"config/path.yaml");
+  graph::core::PathPtr path;
+  graph::core::get_param(logger,param_ns1,"path",path,metrics,checker);
 
-  std::string tree_file_name;
-  graph::core::get_param(logger,param_ns,"tree_file_name",tree_file_name,(std::string)"config/tree.yaml");
+  graph::core::TreePtr tree;
+  graph::core::get_param(logger,param_ns1,"tree",tree,metrics,checker);
 
-  YAML::Node yaml_path, yaml_tree;
-
-  std::string tree_file = package_path+tree_file_name;
-  try {
-    yaml_tree = YAML::LoadFile(tree_file);
-  } catch (const YAML::Exception& e) {
-    ROS_ERROR_STREAM("Error loading YAML file: "<<e.what());
-    ROS_ERROR_STREAM("Tree file name: "<<tree_file);
-    return 1;
-  }
-
-  std::string path_file = package_path+path_file_name;
-  try {
-    yaml_path = YAML::LoadFile(path_file);
-  } catch (const YAML::Exception& e) {
-    ROS_ERROR_STREAM("Error loading YAML file: "<<e.what());
-    ROS_ERROR_STREAM("Path file name: "<<path_file);
-    return 1;
-  }
-
-  graph::core::PathPtr path = graph::core::Path::fromYAML(yaml_path,metrics,checker,logger);
-  graph::core::TreePtr tree = graph::core::Tree::fromYAML(yaml_tree,max_distance,checker,metrics,logger,use_kdtree);
   path->setTree(tree);
 
   tree->print_full_tree_ = true;
@@ -141,10 +120,10 @@ int main(int argc, char **argv)
 
   ROS_INFO("Warp on cloned path");
   double warp_min_conn_length;
-  graph::core::get_param(logger,param_ns,"warp_min_conn_length",warp_min_conn_length,0.1);
+  graph::core::get_param(logger,param_ns2,"warp_min_conn_length",warp_min_conn_length,0.1);
 
   double warp_min_step_size;
-  graph::core::get_param(logger,param_ns,"warp_min_step_size",warp_min_step_size,0.1);
+  graph::core::get_param(logger,param_ns2,"warp_min_step_size",warp_min_step_size,0.1);
 
   graph::core::PathPtr warp_path = path->clone();
   graph::core::PathLocalOptimizerPtr path_opt = std::make_shared<graph::core::PathLocalOptimizer>(checker,metrics,logger);
@@ -156,7 +135,7 @@ int main(int argc, char **argv)
 
   ROS_INFO("Simplify on cloned path");
   double simplify_max_conn_length;
-  graph::core::get_param(logger,param_ns,"simplify_max_conn_length",simplify_max_conn_length,0.1);
+  graph::core::get_param(logger,param_ns2,"simplify_max_conn_length",simplify_max_conn_length,0.1);
 
   graph::core::PathPtr simplify_path = path->clone();
   path_opt->setPath(simplify_path);
