@@ -10,10 +10,12 @@ graph_ros1_tests:
       checker_resolution: 0.01
       parallel_checker_n_threads: 4
 
+      libraries: ["libgraph_core.so","libgraph_ros1.so"]
+
       # planner: RRT, BiRRT, RRT*, ANYTIMERRT
-      planner_plugin: graph::ros1::AnytimeRRTPlugin
+      planner_plugin: graph::core::AnytimeRRTPlugin
+      sampler_plugin: graph::core::InformedSamplerPlugin
+      metrics_plugin: graph::core::EuclideanMetricsPlugin
       checker_plugin: graph::ros1::ParallelMoveitCollisionCheckerPlugin
-      sampler_plugin: graph::ros1::InformedSamplerPlugin
-      metrics_plugin: graph::ros1::EuclideanMetricsPlugin
 
 
