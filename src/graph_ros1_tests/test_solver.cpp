@@ -11,7 +11,7 @@
 #include <graph_core/plugins/metrics/metrics_base_plugin.h>
 
 // Graph ros1 for collision checking
-#include <graph_ros1/plugins/collision_checkers/moveit_collision_checker_base_plugin.h>
+#include <moveit_collision_checker/plugins/collision_checkers/moveit_collision_checker_base_plugin.h>
 
 //Graph display
 #include <graph_display/graph_display.h>

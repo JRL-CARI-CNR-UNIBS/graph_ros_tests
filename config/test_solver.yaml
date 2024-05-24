@@ -10,7 +10,7 @@ graph_ros1_tests:
       checker_resolution: 0.01
       parallel_checker_n_threads: 4
 
-      libraries: ["libgraph_core.so","libgraph_ros1.so"]
+      libraries: ["libgraph_core.so","libmoveit_collision_checker.so"]
 
       # planner: RRT, BiRRT, RRT*, ANYTIMERRT
       planner_plugin: graph::core::AnytimeRRTPlugin
