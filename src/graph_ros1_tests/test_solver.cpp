@@ -139,7 +139,7 @@ int main(int argc, char **argv)
   sampler_plugin->init(param_ns2,start_conf,goal_conf,lb,ub,scale,logger);
   graph::core::SamplerPtr sampler = sampler_plugin->getSampler();
 
-  // Load collision metrics plugin
+  // Load metrics plugin
   std::string metrics_plugin_name;
   graph::core::get_param(logger,param_ns2,"metrics_plugin",metrics_plugin_name,(std::string)"graph::core::EuclideanMetricsPlugin");
 
