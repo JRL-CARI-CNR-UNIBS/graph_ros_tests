@@ -1,4 +1,4 @@
-graph_ros1_tests:
+graph_ros_tests:
   test_solver:
       group_name: "cartesian_arm"
       start_configuration: [0.01,0.01,0.01]

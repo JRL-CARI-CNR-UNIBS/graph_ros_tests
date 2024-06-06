@@ -7,11 +7,11 @@ if [ $# -eq 0 ]; then
 fi
 
 # Get the package path
-PACKAGE_PATH=$(rospack find graph_ros1_tests)
+PACKAGE_PATH=$(rospack find graph_ros_tests)
 
 # Check if rospack succeeded
 if [ -z "$PACKAGE_PATH" ]; then
-    echo "Failed to find the ROS package 'graph_ros1_tests'."
+    echo "Failed to find the ROS package 'graph_ros_tests'."
     exit 1
 fi
 

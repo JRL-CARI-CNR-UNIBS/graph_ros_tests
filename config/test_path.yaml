@@ -1,4 +1,4 @@
-graph_ros1_tests:
+graph_ros_tests:
   test_path:
     group_name: "cartesian_arm"
     utopia_tolerance: 0.05
