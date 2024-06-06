@@ -1,8 +1,10 @@
+// ROS and Moveit related libraries
 #include <ros/package.h>
 #include <moveit_msgs/GetPlanningScene.h>
 #include <moveit/robot_model_loader/robot_model_loader.h>
 #include <moveit/move_group_interface/move_group_interface.h>
 
+// Graph core libraries
 #include <graph_display/graph_display.h>
 #include <graph_core/metrics/euclidean_metrics.h>
 #include <moveit_collision_checker/collision_checkers/parallel_moveit_collision_checker.h>

@@ -9,11 +9,7 @@
 #include <graph_core/plugins/solvers/tree_solver_plugin.h>
 #include <graph_core/plugins/samplers/sampler_base_plugin.h>
 #include <graph_core/plugins/metrics/metrics_base_plugin.h>
-
-// Graph ros1 for collision checking
 #include <moveit_collision_checker/plugins/collision_checkers/moveit_collision_checker_base_plugin.h>
-
-//Graph display
 #include <graph_display/graph_display.h>
 
 // Class loader
@@ -205,7 +201,7 @@ int main(int argc, char **argv)
       fout_path.close();
     }
     else
-      CNR_ERROR(logger,"Error opening 'path.yaml' for writing.");
+      ROS_ERROR("Error opening 'path.yaml' for writing.");
 
     if (fout_tree.is_open())
     {
@@ -213,7 +209,7 @@ int main(int argc, char **argv)
       fout_tree.close();
     }
     else
-      CNR_ERROR(logger,"Error opening 'tree.yaml' for writing.");
+      ROS_ERROR("Error opening 'tree.yaml' for writing.");
 
   }
   else
