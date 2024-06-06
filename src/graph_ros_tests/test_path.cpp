@@ -1,8 +1,12 @@
-#include <ros/package.h>
-#include <moveit_msgs/GetPlanningScene.h>
+// ROS and Moveit related libraries
+#include <rclcpp/rclcpp.hpp>
+#include <ament_index_cpp/get_package_share_directory.hpp>
+
+#include <moveit_msgs/srv/get_planning_scene.hpp>
 #include <moveit/robot_model_loader/robot_model_loader.h>
 #include <moveit/move_group_interface/move_group_interface.h>
 
+// Graph core libraries
 #include <graph_display/graph_display.h>
 #include <graph_core/metrics/euclidean_metrics.h>
 #include <moveit_collision_checker/collision_checkers/parallel_moveit_collision_checker.h>
@@ -10,18 +14,22 @@
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "test_path");
-  ros::AsyncSpinner spinner(4);
-  spinner.start();
-  ros::NodeHandle nh;
+  rclcpp::init(argc, argv);
+
+  rclcpp::NodeOptions options;
+  auto node = rclcpp::Node::make_shared("test_path", options);
+
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(node);
+  executor.spin();
 
   // Load logger configuration file
-  std::string package_name = "graph_ros1_tests";
-  std::string package_path = ros::package::getPath(package_name);
+  std::string package_name = "graph_ros_tests";
+  std::string package_path = ament_index_cpp::get_package_share_directory(package_name);
 
   if (package_path.empty())
   {
-    ROS_ERROR_STREAM("Failed to get path for package '" << package_name);
+    RCLCPP_ERROR_STREAM(node->get_logger(),"Failed to get path for package '" << package_name);
     return 1;
   }
 
@@ -35,10 +43,10 @@ int main(int argc, char **argv)
   if(not graph::core::get_param(logger,param_ns2,"group_name",group_name))
     return 1;
 
-  robot_model_loader::RobotModelLoader robot_model_loader("robot_description");
-  robot_model::RobotModelPtr kinematic_model = robot_model_loader.getModel();
+  robot_model_loader::RobotModelLoader robot_model_loader(node,"robot_description");
+  moveit::core::RobotModelPtr kinematic_model = robot_model_loader.getModel();
   planning_scene::PlanningScenePtr planning_scene = std::make_shared<planning_scene::PlanningScene>(kinematic_model);
-  const robot_state::JointModelGroup* joint_model_group =  kinematic_model->getJointModelGroup(group_name);
+  const moveit::core::JointModelGroup* joint_model_group =  kinematic_model->getJointModelGroup(group_name);
   std::vector<std::string> joint_names = joint_model_group->getActiveJointModelNames();
 
   unsigned int dof = joint_names.size();
@@ -47,7 +55,7 @@ int main(int argc, char **argv)
 
   for (unsigned int idx = 0; idx < dof; idx++)
   {
-    const robot_model::VariableBounds& bounds = kinematic_model->getVariableBounds(joint_names.at(idx));
+    const moveit::core::VariableBounds& bounds = kinematic_model->getVariableBounds(joint_names.at(idx));
     if (bounds.position_bounded_)
     {
       lb(idx) = bounds.min_position_;
@@ -58,25 +66,28 @@ int main(int argc, char **argv)
   // Update the planning scene
   graph::display::DisplayPtr display = std::make_shared<graph::display::Display>(planning_scene,group_name,kinematic_model->getLinkModelNames().back());
   kinematic_model->getLinkModelNames();
-  ros::WallDuration(1).sleep();
+  rclcpp::sleep_for(std::chrono::seconds(1));
 
-  ros::ServiceClient ps_client=nh.serviceClient<moveit_msgs::GetPlanningScene>("/get_planning_scene");
-  moveit_msgs::GetPlanningScene ps_srv;
-  if (!ps_client.waitForExistence(ros::Duration(10)))
+  rclcpp::Client<moveit_msgs::srv::GetPlanningScene>::SharedPtr ps_client =
+    node->create_client<moveit_msgs::srv::GetPlanningScene>("/get_planning_scene");
+
+  if (!ps_client->wait_for_service(std::chrono::seconds(10)))
   {
-    ROS_ERROR("Unable to connect to /get_planning_scene");
+    RCLCPP_ERROR(node->get_logger(),"Unable to connect to /get_planning_scene");
     return 1;
   }
 
-  if (!ps_client.call(ps_srv))
+  auto ps_srv = std::make_shared<moveit_msgs::srv::GetPlanningScene::Request>();
+  auto result = ps_client->async_send_request(ps_srv);
+  if (rclcpp::spin_until_future_complete(node, result)!=rclcpp::FutureReturnCode::SUCCESS)
   {
-    ROS_ERROR("Call to srv not ok");
+    RCLCPP_ERROR(node->get_logger(),"Call to srv not ok");
     return 1;
   }
 
-  if (!planning_scene->setPlanningSceneMsg(ps_srv.response.scene))
+  if (!planning_scene->setPlanningSceneMsg(result.get()->scene))
   {
-    ROS_ERROR("unable to update planning scene");
+    RCLCPP_ERROR(node->get_logger(),"unable to update planning scene");
     return 1;
   }
 
@@ -93,7 +104,7 @@ int main(int argc, char **argv)
   bool use_kdtree = true;
   graph::core::get_param(logger,param_ns2,"use_kdtree",use_kdtree,true);
 
-  graph::core::CollisionCheckerPtr checker = std::make_shared<graph::ros1::ParallelMoveitCollisionChecker>(planning_scene, group_name, logger, n_threads, checker_resolution);
+  graph::core::CollisionCheckerPtr checker = std::make_shared<graph::ros2::ParallelMoveitCollisionChecker>(planning_scene, group_name, logger, n_threads, checker_resolution);
   graph::core::MetricsPtr metrics = std::make_shared<graph::core::EuclideanMetrics>(logger);
 
   graph::core::PathPtr path;
@@ -106,19 +117,20 @@ int main(int argc, char **argv)
 
   tree->print_full_tree_ = true;
 
-  ROS_INFO_STREAM("Tree:\n"<<*tree);
-  ROS_INFO_STREAM("Path:\n"<<*path);
+  RCLCPP_INFO_STREAM(node->get_logger(),"Tree:\n"<<*tree);
+  RCLCPP_INFO_STREAM(node->get_logger(),"Path:\n"<<*path);
 
-  ros::WallDuration(1.0).sleep();
+  rclcpp::sleep_for(std::chrono::milliseconds(100));
+
   display->clearMarkers();
   display->displayPathAndWaypoints(path);
   display->displayTree(tree,"graph_display",{0.0,0.0,1.0,0.01});
 
-  ROS_INFO("Flip the path");
+  RCLCPP_INFO(node->get_logger(),"Flip the path");
   path->flip();
-  ROS_INFO_STREAM("Flipped path\n "<<*path);
+  RCLCPP_INFO_STREAM(node->get_logger(),"Flipped path\n "<<*path);
 
-  ROS_INFO("Warp on cloned path");
+  RCLCPP_INFO(node->get_logger(),"Warp on cloned path");
   double warp_min_conn_length;
   graph::core::get_param(logger,param_ns2,"warp_min_conn_length",warp_min_conn_length,0.1);
 
@@ -129,18 +141,18 @@ int main(int argc, char **argv)
   graph::core::PathLocalOptimizerPtr path_opt = std::make_shared<graph::core::PathLocalOptimizer>(checker,metrics,logger);
   path_opt->setPath(warp_path);
   path_opt->warp(warp_min_conn_length,warp_min_step_size);
-  ROS_INFO_STREAM("Path after warp \n "<<*warp_path);
+  RCLCPP_INFO_STREAM(node->get_logger(),"Path after warp \n "<<*warp_path);
 
   display->displayPathAndWaypoints(warp_path,"graph_display",{0.0,1.0,0.0,1});
 
-  ROS_INFO("Simplify on cloned path");
+  RCLCPP_INFO(node->get_logger(),"Simplify on cloned path");
   double simplify_max_conn_length;
   graph::core::get_param(logger,param_ns2,"simplify_max_conn_length",simplify_max_conn_length,0.1);
 
   graph::core::PathPtr simplify_path = path->clone();
   path_opt->setPath(simplify_path);
   path_opt->simplify(simplify_max_conn_length);
-  ROS_INFO_STREAM("Path after simplify \n "<<*simplify_path);
+  RCLCPP_INFO_STREAM(node->get_logger(),"Path after simplify \n "<<*simplify_path);
 
   display->displayPathAndWaypoints(simplify_path,"graph_display",{1.0,1.0,0.0,1});
 

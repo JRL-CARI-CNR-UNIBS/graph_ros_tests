@@ -1,6 +1,6 @@
 // ROS and Moveit related libraries
-#include <ros/package.h>
-#include <moveit_msgs/GetPlanningScene.h>
+#include <ament_index_cpp/get_package_share_directory.hpp>
+#include <moveit_msgs/srv/get_planning_scene.hpp>
 #include <moveit/robot_model_loader/robot_model_loader.h>
 #include <moveit/move_group_interface/move_group_interface.h>
 
@@ -10,10 +10,7 @@
 #include <graph_core/plugins/samplers/sampler_base_plugin.h>
 #include <graph_core/plugins/metrics/metrics_base_plugin.h>
 
-// Graph ros1 for collision checking
 #include <moveit_collision_checker/plugins/collision_checkers/moveit_collision_checker_base_plugin.h>
-
-//Graph display
 #include <graph_display/graph_display.h>
 
 // Class loader
@@ -21,18 +18,22 @@
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "test_solver");
-  ros::AsyncSpinner spinner(4);
-  spinner.start();
-  ros::NodeHandle nh;
+  rclcpp::init(argc, argv);
+
+  rclcpp::NodeOptions options;
+  auto node = rclcpp::Node::make_shared("test_solver", options);
+
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(node);
+  executor.spin();
 
   // Load logger configuration file
-  std::string package_name = "graph_ros1_tests";
-  std::string package_path = ros::package::getPath(package_name);
+  std::string package_name = "graph_ros_tests";
+  std::string package_path = ament_index_cpp::get_package_share_directory(package_name);
 
   if (package_path.empty())
   {
-    ROS_ERROR_STREAM("Failed to get path for package '" << package_name);
+    RCLCPP_ERROR_STREAM(node->get_logger(),"Failed to get path for package '" << package_name);
     return 1;
   }
 
@@ -46,10 +47,10 @@ int main(int argc, char **argv)
   if(not graph::core::get_param(logger,param_ns2,"group_name",group_name))
     return 1;
 
-  robot_model_loader::RobotModelLoader robot_model_loader("robot_description");
-  robot_model::RobotModelPtr kinematic_model = robot_model_loader.getModel();
+  robot_model_loader::RobotModelLoader robot_model_loader(node,"robot_description");
+  moveit::core::RobotModelPtr kinematic_model = robot_model_loader.getModel();
   planning_scene::PlanningScenePtr planning_scene = std::make_shared<planning_scene::PlanningScene>(kinematic_model);
-  const robot_state::JointModelGroup* joint_model_group =  kinematic_model->getJointModelGroup(group_name);
+  const moveit::core::JointModelGroup* joint_model_group =  kinematic_model->getJointModelGroup(group_name);
   std::vector<std::string> joint_names = joint_model_group->getActiveJointModelNames();
 
   unsigned int dof = joint_names.size();
@@ -58,7 +59,7 @@ int main(int argc, char **argv)
 
   for (unsigned int idx = 0; idx < dof; idx++)
   {
-    const robot_model::VariableBounds& bounds = kinematic_model->getVariableBounds(joint_names.at(idx));
+    const moveit::core::VariableBounds& bounds = kinematic_model->getVariableBounds(joint_names.at(idx));
     if (bounds.position_bounded_)
     {
       lb(idx) = bounds.min_position_;
@@ -68,25 +69,28 @@ int main(int argc, char **argv)
   // Update the planning scene
   graph::display::DisplayPtr display = std::make_shared<graph::display::Display>(planning_scene,group_name,kinematic_model->getLinkModelNames().back());
   kinematic_model->getLinkModelNames();
-  ros::WallDuration(1).sleep();
+  rclcpp::sleep_for(std::chrono::seconds(1));
 
-  ros::ServiceClient ps_client=nh.serviceClient<moveit_msgs::GetPlanningScene>("/get_planning_scene");
-  moveit_msgs::GetPlanningScene ps_srv;
-  if (!ps_client.waitForExistence(ros::Duration(10)))
+  rclcpp::Client<moveit_msgs::srv::GetPlanningScene>::SharedPtr ps_client =
+    node->create_client<moveit_msgs::srv::GetPlanningScene>("/get_planning_scene");
+
+  if (!ps_client->wait_for_service(std::chrono::seconds(10)))
   {
-    ROS_ERROR("Unable to connect to /get_planning_scene");
+    RCLCPP_ERROR(node->get_logger(),"Unable to connect to /get_planning_scene");
     return 1;
   }
 
-  if (!ps_client.call(ps_srv))
+  auto ps_srv = std::make_shared<moveit_msgs::srv::GetPlanningScene::Request>();
+  auto result = ps_client->async_send_request(ps_srv);
+  if (rclcpp::spin_until_future_complete(node, result)!=rclcpp::FutureReturnCode::SUCCESS)
   {
-    ROS_ERROR("Call to srv not ok");
+    RCLCPP_ERROR(node->get_logger(),"Call to srv not ok");
     return 1;
   }
 
-  if (!planning_scene->setPlanningSceneMsg(ps_srv.response.scene))
+  if (!planning_scene->setPlanningSceneMsg(result.get()->scene))
   {
-    ROS_ERROR("unable to update planning scene");
+    RCLCPP_ERROR(node->get_logger(),"unable to update planning scene");
     return 1;
   }
 
@@ -97,11 +101,11 @@ int main(int argc, char **argv)
   if(not graph::core::get_param(logger,param_ns2,"goal_configuration",goal_conf))
     return 1;
 
-  ROS_INFO_STREAM("Start conf: "<<start_conf.transpose());
-  ROS_INFO_STREAM("Goal conf: " <<goal_conf .transpose());
+  RCLCPP_INFO_STREAM(node->get_logger(),"Start conf: "<<start_conf.transpose());
+  RCLCPP_INFO_STREAM(node->get_logger(),"Goal conf: " <<goal_conf .transpose());
 
-  ROS_INFO_STREAM("LB conf: " <<lb .transpose());
-  ROS_INFO_STREAM("UB conf: " <<ub .transpose());
+  RCLCPP_INFO_STREAM(node->get_logger(),"LB conf: " <<lb .transpose());
+  RCLCPP_INFO_STREAM(node->get_logger(),"UB conf: " <<ub .transpose());
 
   // Set-up planning tools
   graph::core::GoalCostFunctionPtr goal_cost_fcn = std::make_shared<graph::core::GoalCostFunction>();
@@ -119,10 +123,10 @@ int main(int argc, char **argv)
   std::string checker_plugin_name;
   graph::core::get_param(logger,param_ns2,"checker_plugin",checker_plugin_name,(std::string)"graph::ros1::ParallelMoveitCollisionCheckerPlugin");
 
-  ROS_INFO_STREAM("Loading checker "<<checker_plugin_name);
-  std::shared_ptr<graph::ros1::MoveitCollisionCheckerBasePlugin> checker_plugin = loader.createInstance<graph::ros1::MoveitCollisionCheckerBasePlugin>(checker_plugin_name);
+  RCLCPP_INFO_STREAM(node->get_logger(),"Loading checker "<<checker_plugin_name);
+  std::shared_ptr<graph::ros2::MoveitCollisionCheckerBasePlugin> checker_plugin = loader.createInstance<graph::ros2::MoveitCollisionCheckerBasePlugin>(checker_plugin_name);
 
-  ROS_INFO_STREAM("Configuring checker plugin ");
+  RCLCPP_INFO(node->get_logger(),"Configuring checker plugin ");
   checker_plugin->init(param_ns2,planning_scene,logger);
   graph::core::CollisionCheckerPtr checker = checker_plugin->getCollisionChecker();
 
@@ -130,10 +134,10 @@ int main(int argc, char **argv)
   std::string sampler_plugin_name;
   graph::core::get_param(logger,param_ns2,"sampler_plugin",sampler_plugin_name,(std::string)"graph::core::InformedSamplerPlugin");
 
-  ROS_INFO_STREAM("Loading sampler "<<sampler_plugin_name);
+  RCLCPP_INFO_STREAM(node->get_logger(),"Loading sampler "<<sampler_plugin_name);
   std::shared_ptr<graph::core::SamplerBasePlugin> sampler_plugin = loader.createInstance<graph::core::SamplerBasePlugin>(sampler_plugin_name);
 
-  ROS_INFO_STREAM("Configuring sampler plugin ");
+  RCLCPP_INFO(node->get_logger(),"Configuring sampler plugin ");
   Eigen::VectorXd scale(dof); scale.setOnes(dof,1);
 
   sampler_plugin->init(param_ns2,start_conf,goal_conf,lb,ub,scale,logger);
@@ -143,10 +147,10 @@ int main(int argc, char **argv)
   std::string metrics_plugin_name;
   graph::core::get_param(logger,param_ns2,"metrics_plugin",metrics_plugin_name,(std::string)"graph::core::EuclideanMetricsPlugin");
 
-  ROS_INFO_STREAM("Loading metrics "<<metrics_plugin_name);
+  RCLCPP_INFO_STREAM(node->get_logger(),"Loading metrics "<<metrics_plugin_name);
   std::shared_ptr<graph::core::MetricsBasePlugin> metrics_plugin = loader.createInstance<graph::core::MetricsBasePlugin>(metrics_plugin_name);
 
-  ROS_INFO_STREAM("Configuring metrics plugin ");
+  RCLCPP_INFO(node->get_logger(),"Configuring metrics plugin ");
   metrics_plugin->init(param_ns2,logger);
   graph::core::MetricsPtr metrics = metrics_plugin->getMetrics();
 
@@ -154,21 +158,21 @@ int main(int argc, char **argv)
   std::string planner_plugin_name;
   graph::core::get_param(logger,param_ns2,"planner_plugin",planner_plugin_name,(std::string)"graph::core::RRTPlugin");
 
-  ROS_INFO_STREAM("Loading plugin "<<planner_plugin_name);
+  RCLCPP_INFO_STREAM(node->get_logger(),"Loading plugin "<<planner_plugin_name);
   std::shared_ptr<graph::core::TreeSolverPlugin> solver_plugin = loader.createInstance<graph::core::TreeSolverPlugin>(planner_plugin_name);
 
-  ROS_INFO_STREAM("Configuring solver plugin ");
+  RCLCPP_INFO(node->get_logger(),"Configuring solver plugin ");
   solver_plugin->init(param_ns2,metrics,checker,sampler,goal_cost_fcn,logger);
   graph::core::TreeSolverPtr solver = solver_plugin->getSolver();
 
   graph::core::PathPtr solution;
-  ros::WallTime tic = ros::WallTime::now();
+  auto tic = std::chrono::system_clock::now();
   graph::core::NodePtr start_node = std::make_shared<graph::core::Node>(start_conf,logger);
   graph::core::NodePtr goal_node = std::make_shared<graph::core::Node>(goal_conf,logger);
 
   if(solver->computePath(start_node,goal_node,param_ns2,solution,10.0,1000000))
   {
-    ROS_INFO_STREAM("Solution found!\n"<<*solution);
+    RCLCPP_INFO_STREAM(node->get_logger(),"Solution found!\n"<<*solution);
     display->displayPathAndWaypoints(solution);
     display->displayTree(solution->getTree(),"graph_display",{0.0,0.0,1.0,0.15});
 
@@ -180,13 +184,13 @@ int main(int argc, char **argv)
     rrt_star->setSolution(solution);
     if(rrt_star->solve(solution,1000000,10.0))
     {
-      ROS_INFO_STREAM("Solution found!\n"<<*solution);
+      RCLCPP_INFO_STREAM(node->get_logger(),"Solution found!\n"<<*solution);
       display->clearMarkers();
       display->displayPathAndWaypoints(solution);
       display->displayTree(solution->getTree(),"graph_display",{0.0,0.0,1.0,0.15});
     }
     else
-      ROS_ERROR_STREAM("No better solution found");
+      RCLCPP_ERROR(node->get_logger(),"No better solution found");
 
     YAML::Node yaml_path, yaml_path_ns, yaml_tree, yaml_tree_ns;
 
@@ -205,7 +209,7 @@ int main(int argc, char **argv)
       fout_path.close();
     }
     else
-      CNR_ERROR(logger,"Error opening 'path.yaml' for writing.");
+      RCLCPP_ERROR(node->get_logger(),"Error opening 'path.yaml' for writing.");
 
     if (fout_tree.is_open())
     {
@@ -213,11 +217,11 @@ int main(int argc, char **argv)
       fout_tree.close();
     }
     else
-      CNR_ERROR(logger,"Error opening 'tree.yaml' for writing.");
+      RCLCPP_ERROR(node->get_logger(),"Error opening 'tree.yaml' for writing.");
 
   }
   else
-    ROS_ERROR_STREAM("Solution not found in "<<(ros::WallTime::now()-tic).toSec()<<" seconds");
+    RCLCPP_ERROR_STREAM(node->get_logger(),"Solution not found in "<<std::chrono::duration<double>((std::chrono::system_clock::now()-tic)).count()<<" seconds");
 
   return 0;
 }
