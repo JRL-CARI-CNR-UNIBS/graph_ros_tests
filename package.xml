@@ -23,9 +23,10 @@
 <build_export_depend>graph_display</build_export_depend>
 <exec_depend>graph_display</exec_depend>
 
-
 <build_depend>graph_core</build_depend>
 <build_export_depend>graph_core</build_export_depend>
 <exec_depend>graph_core</exec_depend>
+
+<depend>object_loader</depend>
 
 </package>
