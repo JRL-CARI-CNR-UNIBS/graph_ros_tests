@@ -23,7 +23,7 @@ int main(int argc, char **argv)
   ros::NodeHandle nh;
 
   // Load logger configuration file
-  std::string package_name = "graph_ros1_tests";
+  std::string package_name = "graph_ros_tests";
   std::string package_path = ros::package::getPath(package_name);
 
   if (package_path.empty())

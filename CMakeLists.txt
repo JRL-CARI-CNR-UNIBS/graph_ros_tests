@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(graph_ros1_tests)
+project(graph_ros_tests)
 
 add_compile_options(-std=c++2a -funroll-loops -Wall -Ofast)
 #set(CMAKE_BUILD_TYPE Release)
@@ -14,7 +14,7 @@ find_package(graph_core REQUIRED)
 
 catkin_package(
   # INCLUDE_DIRS include
-  # LIBRARIES graph_ros1_tests
+  # LIBRARIES graph_ros_tests
   CATKIN_DEPENDS moveit_collision_checker graph_display
   DEPENDS graph_core
   )
