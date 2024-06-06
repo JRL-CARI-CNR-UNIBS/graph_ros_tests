@@ -1,4 +1,4 @@
-graph_ros1_tests:
+graph_ros_tests:
   tree:
     max_distance: 0.1
     use_kdtree: true
