@@ -17,6 +17,8 @@ int main(int argc, char **argv)
   spinner.start();
   ros::NodeHandle nh;
 
+  ros::WallDuration(5).sleep();
+
   // Load logger configuration file
   std::string package_name = "graph_ros_tests";
   std::string package_path = ros::package::getPath(package_name);
