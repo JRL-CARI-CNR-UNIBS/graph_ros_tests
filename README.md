@@ -1,2 +1,2 @@
-# graph_ros1_tests
-Test package for graph_ros1
+# graph_ros_tests
+Test package for [graph_core](https://github.com/JRL-CARI-CNR-UNIBS/cari_motion_planning) on ROS.

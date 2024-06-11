@@ -28,4 +28,8 @@
 <build_export_depend>graph_core</build_export_depend>
 <exec_depend>graph_core</exec_depend>
 
+<depend>cnr_tf_named_object_loader</depend>
+<depend>cnr_scene_manager</depend>
+<depend>cnr_scene_manager_msgs</depend>
+
 </package>

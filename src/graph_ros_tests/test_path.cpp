@@ -23,6 +23,8 @@ int main(int argc, char **argv)
   executor.add_node(node);
   executor.spin();
 
+ ros::WallDuration(5).sleep();
+
   // Load logger configuration file
   std::string package_name = "graph_ros_tests";
   std::string package_path = ament_index_cpp::get_package_share_directory(package_name);
