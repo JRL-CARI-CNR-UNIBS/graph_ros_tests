@@ -23,7 +23,7 @@ int main(int argc, char **argv)
   executor.add_node(node);
   executor.spin();
 
- ros::WallDuration(5).sleep();
+  rclcpp::sleep_for(std::chrono::nanoseconds(int(5*1e9)));
 
   // Load logger configuration file
   std::string package_name = "graph_ros_tests";
