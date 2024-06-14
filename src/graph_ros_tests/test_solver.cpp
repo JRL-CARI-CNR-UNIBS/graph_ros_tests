@@ -23,11 +23,7 @@ int main(int argc, char **argv)
   rclcpp::NodeOptions options;
   auto node = rclcpp::Node::make_shared("test_solver", options);
 
-  rclcpp::executors::MultiThreadedExecutor executor;
-  executor.add_node(node);
-  executor.spin();
-
-  rclcpp::sleep_for(std::chrono::nanoseconds(int(5*1e9)));
+  rclcpp::sleep_for(std::chrono::seconds(int(5)));
 
   // Load logger configuration file
   std::string package_name = "graph_ros_tests";
@@ -69,7 +65,7 @@ int main(int argc, char **argv)
     }
   }
   // Update the planning scene
-  graph::display::DisplayPtr display = std::make_shared<graph::display::Display>(planning_scene,group_name,kinematic_model->getLinkModelNames().back());
+  graph::display::DisplayPtr display = std::make_shared<graph::display::Display>(node,planning_scene,group_name,kinematic_model->getLinkModelNames().back());
   kinematic_model->getLinkModelNames();
   rclcpp::sleep_for(std::chrono::seconds(1));
 

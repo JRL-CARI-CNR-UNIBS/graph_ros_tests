@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<package format="2">
+<package format="3">
 <name>graph_ros_tests</name>
 <version>0.0.0</version>
 <description>The graph_ros_tests package</description>
@@ -31,5 +31,11 @@
 <depend>cnr_tf_named_object_loader</depend>
 <depend>cnr_scene_manager</depend>
 <depend>cnr_scene_manager_msgs</depend>
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+    <!-- Other tools can request additional information be placed here -->
+    <build_type>ament_cmake</build_type>
+  </export>
 
 </package>

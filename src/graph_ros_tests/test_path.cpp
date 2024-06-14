@@ -13,17 +13,13 @@
 #include <graph_core/solvers/path_optimizers/path_local_optimizer.h>
 
 int main(int argc, char **argv)
-{
+{ 
   rclcpp::init(argc, argv);
 
   rclcpp::NodeOptions options;
   auto node = rclcpp::Node::make_shared("test_path", options);
 
-  rclcpp::executors::MultiThreadedExecutor executor;
-  executor.add_node(node);
-  executor.spin();
-
-  rclcpp::sleep_for(std::chrono::nanoseconds(int(5*1e9)));
+  rclcpp::sleep_for(std::chrono::seconds(int(5)));
 
   // Load logger configuration file
   std::string package_name = "graph_ros_tests";
@@ -66,18 +62,19 @@ int main(int argc, char **argv)
   }
 
   // Update the planning scene
-  graph::display::DisplayPtr display = std::make_shared<graph::display::Display>(planning_scene,group_name,kinematic_model->getLinkModelNames().back());
-  kinematic_model->getLinkModelNames();
+  graph::display::DisplayPtr display = std::make_shared<graph::display::Display>(node,planning_scene,group_name,kinematic_model->getLinkModelNames().back());
   rclcpp::sleep_for(std::chrono::seconds(1));
 
   rclcpp::Client<moveit_msgs::srv::GetPlanningScene>::SharedPtr ps_client =
-    node->create_client<moveit_msgs::srv::GetPlanningScene>("/get_planning_scene");
+      node->create_client<moveit_msgs::srv::GetPlanningScene>("/get_planning_scene");
 
   if (!ps_client->wait_for_service(std::chrono::seconds(10)))
   {
     RCLCPP_ERROR(node->get_logger(),"Unable to connect to /get_planning_scene");
     return 1;
   }
+
+  RCLCPP_INFO(node->get_logger(),"QUA3");
 
   auto ps_srv = std::make_shared<moveit_msgs::srv::GetPlanningScene::Request>();
   auto result = ps_client->async_send_request(ps_srv);
@@ -86,6 +83,9 @@ int main(int argc, char **argv)
     RCLCPP_ERROR(node->get_logger(),"Call to srv not ok");
     return 1;
   }
+
+  RCLCPP_INFO(node->get_logger(),"QUA4");
+
 
   if (!planning_scene->setPlanningSceneMsg(result.get()->scene))
   {
