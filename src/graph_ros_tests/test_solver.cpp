@@ -70,7 +70,7 @@ int main(int argc, char **argv)
   rclcpp::sleep_for(std::chrono::seconds(1));
 
   rclcpp::Client<moveit_msgs::srv::GetPlanningScene>::SharedPtr ps_client =
-    node->create_client<moveit_msgs::srv::GetPlanningScene>("/get_planning_scene");
+      node->create_client<moveit_msgs::srv::GetPlanningScene>("/get_planning_scene");
 
   if (!ps_client->wait_for_service(std::chrono::seconds(10)))
   {
@@ -174,12 +174,13 @@ int main(int argc, char **argv)
     display->displayPathAndWaypoints(solution);
     display->displayTree(solution->getTree(),"graph_display",{0.0,0.0,1.0,0.15});
 
-    std::cout << "Press Enter to rewire the solution with RRT* and informed sampling";
-    std::getchar();
+    RCLCPP_INFO(node->get_logger(),"Press Enter to rewire the solution with RRT* and informed sampling");
+    std::cin.get();
 
     graph::core::RRTStarPtr rrt_star = std::make_shared<graph::core::RRTStar>(metrics,checker,sampler,logger);
     rrt_star->importFromSolver(solver);
     rrt_star->setSolution(solution);
+
     if(rrt_star->solve(solution,1000000,10.0))
     {
       RCLCPP_INFO_STREAM(node->get_logger(),"Solution found!\n"<<*solution);
@@ -220,6 +221,13 @@ int main(int argc, char **argv)
   }
   else
     RCLCPP_ERROR_STREAM(node->get_logger(),"Solution not found in "<<std::chrono::duration<double>((std::chrono::system_clock::now()-tic)).count()<<" seconds");
+
+  //keep terminal alive until executable is not killed
+  RCLCPP_INFO(node->get_logger(),"Press Ctrl+C to kill the test");
+  while(rclcpp::ok())
+    rclcpp::sleep_for(std::chrono::seconds(1));
+
+  rclcpp::shutdown();
 
   return 0;
 }
