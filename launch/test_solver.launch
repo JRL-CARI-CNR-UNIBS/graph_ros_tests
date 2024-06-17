@@ -22,8 +22,7 @@ output="screen">
 <node pkg="graph_ros_tests"
 name="test_solver"
 type="test_solver"
-output="screen"
-launch-prefix="gdb -ex run --args" >
+output="screen">
 </node>
 
 </launch>
