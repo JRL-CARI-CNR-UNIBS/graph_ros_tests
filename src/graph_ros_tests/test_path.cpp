@@ -97,7 +97,7 @@ int main(int argc, char **argv)
   bool use_kdtree = true;
   graph::core::get_param(logger,param_ns2,"use_kdtree",use_kdtree,true);
 
-  graph::core::CollisionCheckerPtr checker = std::make_shared<graph::ros1::ParallelMoveitCollisionChecker>(planning_scene, group_name, logger, n_threads, checker_resolution);
+  graph::core::CollisionCheckerPtr checker = std::make_shared<graph::collision_check::ParallelMoveitCollisionChecker>(planning_scene, group_name, logger, n_threads, checker_resolution);
   graph::core::MetricsPtr metrics = std::make_shared<graph::core::EuclideanMetrics>(logger);
 
   graph::core::PathPtr path;

@@ -115,10 +115,10 @@ int main(int argc, char **argv)
 
   // Load collision checker plugin
   std::string checker_plugin_name;
-  graph::core::get_param(logger,param_ns2,"checker_plugin",checker_plugin_name,(std::string)"graph::ros1::ParallelMoveitCollisionCheckerPlugin");
+  graph::core::get_param(logger,param_ns2,"checker_plugin",checker_plugin_name,(std::string)"graph::collision_check::ParallelMoveitCollisionCheckerPlugin");
 
   ROS_INFO_STREAM("Loading checker "<<checker_plugin_name);
-  std::shared_ptr<graph::ros1::MoveitCollisionCheckerBasePlugin> checker_plugin = loader.createInstance<graph::ros1::MoveitCollisionCheckerBasePlugin>(checker_plugin_name);
+  std::shared_ptr<graph::collision_check::MoveitCollisionCheckerBasePlugin> checker_plugin = loader.createInstance<graph::collision_check::MoveitCollisionCheckerBasePlugin>(checker_plugin_name);
 
   ROS_INFO_STREAM("Configuring checker plugin ");
   checker_plugin->init(param_ns2,planning_scene,logger);
