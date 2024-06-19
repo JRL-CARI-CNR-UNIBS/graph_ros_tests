@@ -122,7 +122,7 @@ int main(int argc, char **argv)
   graph::core::get_param(logger,param_ns2,"checker_plugin",checker_plugin_name,(std::string)"graph::ros1::ParallelMoveitCollisionCheckerPlugin");
 
   RCLCPP_INFO_STREAM(node->get_logger(),"Loading checker "<<checker_plugin_name);
-  std::shared_ptr<graph::ros2::MoveitCollisionCheckerBasePlugin> checker_plugin = loader.createInstance<graph::ros2::MoveitCollisionCheckerBasePlugin>(checker_plugin_name);
+  std::shared_ptr<graph::collision_check::MoveitCollisionCheckerBasePlugin> checker_plugin = loader.createInstance<graph::collision_check::MoveitCollisionCheckerBasePlugin>(checker_plugin_name);
 
   RCLCPP_INFO(node->get_logger(),"Configuring checker plugin ");
   checker_plugin->init(param_ns2,planning_scene,logger);

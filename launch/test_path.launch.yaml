@@ -8,8 +8,8 @@ launch:
 - executable:
     cmd: 'cnr_param_server -p $(find-pkg-share graph_ros_tests)/config/scene.yaml'
 
-#- include:
-#    file: "$(find-pkg-share cartesian_moveit_config)/launch/demo.launch.py"
+- include:
+   file: "$(find-pkg-share cartesian_moveit_config)/launch/demo.launch.py"
 
 - node:
     pkg: "cnr_scene_manager"

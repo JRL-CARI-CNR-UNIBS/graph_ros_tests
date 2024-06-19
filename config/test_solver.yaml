@@ -16,6 +16,6 @@ graph_ros_tests:
       planner_plugin: graph::core::AnytimeRRTPlugin
       sampler_plugin: graph::core::InformedSamplerPlugin
       metrics_plugin: graph::core::EuclideanMetricsPlugin
-      checker_plugin: graph::ros2::ParallelMoveitCollisionCheckerPlugin
+      checker_plugin: graph::collision_check::ParallelMoveitCollisionCheckerPlugin
 
 
