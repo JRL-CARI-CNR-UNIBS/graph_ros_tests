@@ -11,9 +11,6 @@ output="screen">
 <!--  Launche the cell and load the obstacles-->
 <include file="$(find cartesian_moveit_config)/launch/demo.launch"> </include>
 
-<node name="cnr_tf_named_object_loader_node" pkg="cnr_tf_named_object_loader" type="cnr_tf_named_object_loader_node" output="screen">
-        <param name="timeout" value="0.01" />
-</node>
 <node pkg="cnr_scene_manager" name="cnr_scene_manager" type="cnr_scene_manager" output="screen">
         <param name="param_ns" type="string" value="/graph_ros_tests"/>
 </node>
