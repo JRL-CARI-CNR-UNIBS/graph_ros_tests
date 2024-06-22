@@ -13,7 +13,7 @@ graph_ros_tests:
       libraries: ["libgraph_core.so","libmoveit_collision_checker.so"]
 
       # planner: RRT, BiRRT, RRT*, ANYTIMERRT
-      planner_plugin: graph::core::AnytimeRRTPlugin
+      planner_plugin: graph::core::RRTPlugin
       sampler_plugin: graph::core::InformedSamplerPlugin
       metrics_plugin: graph::core::EuclideanMetricsPlugin
       checker_plugin: graph::collision_check::ParallelMoveitCollisionCheckerPlugin
