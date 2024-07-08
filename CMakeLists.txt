@@ -34,3 +34,8 @@ target_link_libraries(test_path
   ${catkin_LIBRARIES}
   graph_core::graph_core
   )
+
+# Install
+install(TARGETS test_solver test_path
+   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
