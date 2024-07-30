@@ -102,7 +102,7 @@ int main(int argc, char **argv)
   ROS_INFO_STREAM("UB conf: " <<ub .transpose());
 
   // Set-up planning tools
-  graph::core::GoalCostFunctionPtr goal_cost_fcn = std::make_shared<graph::core::GoalCostFunction>();
+  graph::core::GoalCostFunctionPtr goal_cost_fcn = std::make_shared<graph::core::GoalCostFunctionBase>();
 
   // Set-up the class laoder
   cnr_class_loader::MultiLibraryClassLoader loader(false);
