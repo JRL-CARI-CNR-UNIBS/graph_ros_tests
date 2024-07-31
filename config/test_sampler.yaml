@@ -1,0 +1,10 @@
+graph_ros_tests:
+  test_sampler:
+    group_name: "cartesian_arm"
+    start_configuration: [0.01,0.01,0.01]
+    goal_configuration:  [0.99,0.99,0.99]
+    libraries: ["libgraph_core.so"]
+    sampler_plugin: graph::core::BallSamplerPlugin
+    inf_cost: false  #if true, param 'cost' is not considered
+    cost: 0.3
+
