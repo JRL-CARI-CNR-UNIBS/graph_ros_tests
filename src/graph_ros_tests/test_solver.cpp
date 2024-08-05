@@ -102,7 +102,7 @@ int main(int argc, char **argv)
   ROS_INFO_STREAM("UB conf: " <<ub .transpose());
 
   // Set-up planning tools
-  graph::core::GoalCostFunctionPtr goal_cost_fcn = std::make_shared<graph::core::GoalCostFunction>();
+  graph::core::GoalCostFunctionPtr goal_cost_fcn = std::make_shared<graph::core::GoalCostFunctionBase>();
 
   // Set-up the class laoder
   cnr_class_loader::MultiLibraryClassLoader loader(false);
@@ -122,7 +122,7 @@ int main(int argc, char **argv)
 
   ROS_INFO_STREAM("Configuring checker plugin ");
   checker_plugin->init(param_ns2,planning_scene,logger);
-  graph::core::CollisionCheckerPtr checker = checker_plugin->getCollisionChecker();
+  graph::collision_check::MoveitCollisionCheckerPtr checker = checker_plugin->getCollisionChecker();
 
   // Load sampler plugin
   std::string sampler_plugin_name;

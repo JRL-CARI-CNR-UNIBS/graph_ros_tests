@@ -17,5 +17,3 @@ graph_ros_tests:
       sampler_plugin: graph::core::InformedSamplerPlugin
       metrics_plugin: graph::core::EuclideanMetricsPlugin
       checker_plugin: graph::collision_check::ParallelMoveitCollisionCheckerPlugin
-
-
