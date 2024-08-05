@@ -35,18 +35,23 @@ target_link_libraries(test_path
   graph_core::graph_core
   )
 
+add_executable(test_sampler src/${PROJECT_NAME}/test_sampler.cpp)
+target_link_libraries(test_sampler
+  ${catkin_LIBRARIES}
+  graph_core::graph_core
+  )
+
+add_executable(test_parallel_checker src/${PROJECT_NAME}/test_parallel_checker.cpp)
+target_link_libraries(test_parallel_checker
+  ${catkin_LIBRARIES}
+  graph_core::graph_core
+  )
+
+
 # Install
-install(TARGETS test_solver test_path
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-  )
+install(TARGETS test_solver test_path test_sampler test_parallel_checker
+   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
-install(DIRECTORY config
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
-
-install(DIRECTORY launch
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
-
-install(DIRECTORY script
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-  USE_SOURCE_PERMISSIONS
-  )
+install(DIRECTORY launch config script
+    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})

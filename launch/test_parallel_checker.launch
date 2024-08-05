@@ -4,12 +4,13 @@
 <!--  Load parameters in cnr_param server-->
 <node pkg="graph_ros_tests"
 type="load_params.sh" name="load_params"
-args="test_sampler.yaml scene.yaml"
+args="scene.yaml test_parallel_checker.yaml path.yaml"
 output="screen">
 </node>
 
 <!--  Launche the cell and load the obstacles-->
 <include file="$(find cartesian_moveit_config)/launch/demo.launch"> </include>
+<!-- <include file="$(find high_dof_12_moveit_config)/launch/demo.launch"> </include> -->
 
 <node pkg="cnr_scene_manager" name="cnr_scene_manager" type="cnr_scene_manager" output="screen">
         <param name="param_ns" type="string" value="/graph_ros_tests"/>
@@ -17,9 +18,10 @@ output="screen">
 
 <!--  Launche the test node-->
 <node pkg="graph_ros_tests"
-name="test_sampler"
-type="test_sampler"
-output="screen">
+name="test_parallel_checker"
+type="test_parallel_checker"
+output="screen"
+launch-prefix="gdb -ex run --args" >
 </node>
 
 </launch>

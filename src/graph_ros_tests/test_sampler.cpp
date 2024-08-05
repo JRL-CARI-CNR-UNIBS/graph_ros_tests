@@ -14,7 +14,7 @@
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "test_solver");
+  ros::init(argc, argv, "test_sampler");
   ros::AsyncSpinner spinner(4);
   spinner.start();
   ros::NodeHandle nh;
@@ -32,11 +32,11 @@ int main(int argc, char **argv)
   }
 
   std::string logger_file = package_path+"/config/logger_param.yaml";
-  cnr_logger::TraceLoggerPtr logger = std::make_shared<cnr_logger::TraceLogger>("test_solver",logger_file);
+  cnr_logger::TraceLoggerPtr logger = std::make_shared<cnr_logger::TraceLogger>("test_sampler",logger_file);
 
   // Get the robot description
   std::string param_ns1 = "/"+package_name;
-  std::string param_ns2 = param_ns1+"/test_solver";
+  std::string param_ns2 = param_ns1+"/test_sampler";
   std::string group_name;
   if(not graph::core::get_param(logger,param_ns2,"group_name",group_name))
     return 1;
@@ -119,7 +119,16 @@ int main(int argc, char **argv)
 
   sampler_plugin->init(param_ns2,start_conf,goal_conf,lb,ub,scale,logger);
   graph::core::SamplerPtr sampler = sampler_plugin->getSampler();
-  double cost = std::numeric_limits<double>::infinity();
+
+  double cost;
+  bool inf_cost;
+  graph::core::get_param(logger,param_ns2,"inf_cost",inf_cost,true);
+
+  if(inf_cost)
+    cost = std::numeric_limits<double>::infinity();
+  else
+    graph::core::get_param(logger,param_ns2,"cost",cost,0.0);
+
   sampler->setCost(cost);
   display->clearMarkers();
   display->clearMarkers();

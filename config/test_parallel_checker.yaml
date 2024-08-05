@@ -1,0 +1,8 @@
+graph_ros_tests:
+  test_parallel_checker:
+      group_name: "cartesian_arm"
+      n_iter: 100000
+      checker_resolution: 0.005
+      parallel_checker_n_threads: 4
+
+
