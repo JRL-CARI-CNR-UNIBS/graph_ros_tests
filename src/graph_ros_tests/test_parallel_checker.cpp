@@ -98,23 +98,23 @@ int main(int argc, char **argv)
   graph::core::PathPtr path;
   graph::core::get_param(logger,param_ns1,"path",path,metrics,checker);
 
-  ros::WallTime tic;
+  graph::core::graph_time_point tic;
   double parallel_mean = 0.0;
   double base_mean = 0.0;
   CNR_INFO(logger,cnr_logger::BW()<<"======> CHECKING THE PATH <======"<<cnr_logger::RESET());
   for(unsigned int i=0;i<100;i++)
   {
     path->setChecker(checker);
-    tic = ros::WallTime::now();
+    tic = graph::core::graph_time::now();
     path->isValid(checker);
-    double time_base_checker = (ros::WallTime::now()-tic).toSec()*1000.0;
+    double time_base_checker = graph::core::toSeconds(graph::core::graph_time::now(),tic)*1000.0;
 
     base_mean += time_base_checker;
 
     path->setChecker(parallel_checker);
-    tic = ros::WallTime::now();
+    tic = graph::core::graph_time::now();
     path->isValid(parallel_checker);
-    double time_parallel_checker = (ros::WallTime::now()-tic).toSec()*1000.0;
+    double time_parallel_checker = graph::core::toSeconds(graph::core::graph_time::now(),tic)*1000.0;
 
     parallel_mean += time_parallel_checker;
 
@@ -134,15 +134,15 @@ int main(int argc, char **argv)
     auto q1 = sampler.sample();
     auto q2 = sampler.sample();
 
-    tic = ros::WallTime::now();
+    tic = graph::core::graph_time::now();
     bool res1 = parallel_checker->checkConnection(q1,q2);
-    double time_parallel_checker = (ros::WallTime::now()-tic).toSec()*1000.0;
+    double time_parallel_checker = graph::core::toSeconds(graph::core::graph_time::now(),tic)*1000.0;
 
     parallel_mean += time_parallel_checker;
 
-    tic = ros::WallTime::now();
+    tic = graph::core::graph_time::now();
     bool res2 = checker->checkConnection(q1,q2);
-    double time_base_checker = (ros::WallTime::now()-tic).toSec()*1000.0;
+    double time_base_checker = graph::core::toSeconds(graph::core::graph_time::now(),tic)*1000.0;
 
     base_mean += time_base_checker;
 

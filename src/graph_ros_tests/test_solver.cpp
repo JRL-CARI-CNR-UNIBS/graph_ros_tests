@@ -160,7 +160,7 @@ int main(int argc, char **argv)
   graph::core::TreeSolverPtr solver = solver_plugin->getSolver();
 
   graph::core::PathPtr solution;
-  ros::WallTime tic = ros::WallTime::now();
+  auto tic = graph::core::graph_time::now();
   graph::core::NodePtr start_node = std::make_shared<graph::core::Node>(start_conf,logger);
   graph::core::NodePtr goal_node = std::make_shared<graph::core::Node>(goal_conf,logger);
 
@@ -215,7 +215,7 @@ int main(int argc, char **argv)
 
   }
   else
-    ROS_ERROR_STREAM("Solution not found in "<<(ros::WallTime::now()-tic).toSec()<<" seconds");
+    ROS_ERROR_STREAM("Solution not found in "<<graph::core::toSeconds(graph::core::graph_time::now(),tic)<<" seconds");
 
   return 0;
 }
