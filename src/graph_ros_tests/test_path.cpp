@@ -74,8 +74,6 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  RCLCPP_INFO(node->get_logger(),"QUA3");
-
   auto ps_srv = std::make_shared<moveit_msgs::srv::GetPlanningScene::Request>();
   auto result = ps_client->async_send_request(ps_srv);
   if (rclcpp::spin_until_future_complete(node, result)!=rclcpp::FutureReturnCode::SUCCESS)
@@ -83,9 +81,6 @@ int main(int argc, char **argv)
     RCLCPP_ERROR(node->get_logger(),"Call to srv not ok");
     return 1;
   }
-
-  RCLCPP_INFO(node->get_logger(),"QUA4");
-
 
   if (!planning_scene->setPlanningSceneMsg(result.get()->scene))
   {
@@ -99,12 +94,6 @@ int main(int argc, char **argv)
 
   double checker_resolution;
   graph::core::get_param(logger,param_ns2,"checker_resolution",checker_resolution,0.01);
-
-  double max_distance;
-  graph::core::get_param(logger,param_ns2,"max_distance",max_distance,1.0);
-
-  bool use_kdtree = true;
-  graph::core::get_param(logger,param_ns2,"use_kdtree",use_kdtree,true);
 
   graph::core::CollisionCheckerPtr checker = std::make_shared<graph::collision_check::ParallelMoveitCollisionChecker>(planning_scene, group_name, logger, n_threads, checker_resolution);
   graph::core::MetricsPtr metrics = std::make_shared<graph::core::EuclideanMetrics>(logger);
