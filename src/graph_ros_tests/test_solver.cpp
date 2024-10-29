@@ -106,7 +106,7 @@ int main(int argc, char **argv)
   RCLCPP_INFO_STREAM(node->get_logger(),"UB conf: " <<ub .transpose());
 
   // Set-up planning tools
-  graph::core::GoalCostFunctionPtr goal_cost_fcn = std::make_shared<graph::core::GoalCostFunction>();
+  graph::core::GoalCostFunctionPtr goal_cost_fcn = std::make_shared<graph::core::GoalCostFunctionBase>();
 
   // Set-up the class laoder
   cnr_class_loader::MultiLibraryClassLoader loader(false);
