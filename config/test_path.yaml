@@ -1,10 +1,6 @@
 graph_ros_tests:
   test_path:
     group_name: "cartesian_arm"
-    utopia_tolerance: 0.05
-    extend: false
-    max_distance: 0.1
-    use_kdtree: true
     checker_resolution: 0.01
     parallel_checker_n_threads: 4
     path_file_name: "/config/path.yaml"
