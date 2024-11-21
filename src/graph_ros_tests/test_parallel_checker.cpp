@@ -29,6 +29,7 @@ int main(int argc, char **argv)
     return 1;
   }
 
+
   std::string logger_file = package_path+"/config/logger_param.yaml";
   cnr_logger::TraceLoggerPtr logger = std::make_shared<cnr_logger::TraceLogger>("test_parallel_checker",logger_file);
 
