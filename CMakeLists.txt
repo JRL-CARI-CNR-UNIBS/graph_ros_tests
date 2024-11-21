@@ -2,13 +2,16 @@ cmake_minimum_required(VERSION 3.8)
 project(graph_ros_tests)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-funroll-loops -Wall -Ofast)
+  if(CMAKE_BUILD_TYPE MATCHES "Release")
+    add_compile_options(-funroll-loops -Wall -Ofast -flto) #-O3
+  endif()
+  if(CMAKE_BUILD_TYPE MATCHES "Debug")
+    add_compile_options(-Wall -g -Og)
+  endif()
 endif()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-set(CMAKE_BUILD_TYPE Debug)
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
